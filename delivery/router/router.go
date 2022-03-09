@@ -9,6 +9,6 @@ func Router(
 	mux *http.ServeMux,
 	userController *_user.UserController,
 ) {
-
-	mux.Handle("/users", userController.CreateNewUser())
+	mux.Handle("/login", userController.Login())
+	mux.Handle("/signup", userController.CreateNewUser())
 }

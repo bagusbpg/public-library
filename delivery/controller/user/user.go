@@ -6,8 +6,10 @@ import (
 	"log"
 	"net/http"
 	_common "plain-go/public-library/delivery/common"
+	_helper "plain-go/public-library/delivery/helper"
 	_entity "plain-go/public-library/entity"
 	_userRepository "plain-go/public-library/repository/user"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -57,6 +59,39 @@ func (uc UserController) CreateNewUser() http.HandlerFunc {
 			return
 		}
 
+		name := strings.Title(strings.TrimSpace(newUser.Name))
+		email := strings.TrimSpace(newUser.Email)
+		phone := strings.TrimSpace(newUser.Phone)
+		password := strings.TrimSpace(newUser.Phone)
+
+		check := []string{name, email, phone, password}
+
+		for _, s := range check {
+			if s == "" {
+				log.Println("empty input")
+				_common.CreateResponse(rw, http.StatusBadRequest, "empty input", nil)
+				return
+			}
+
+			if strings.ContainsAny(strings.ReplaceAll(s, " ", ""), ";--") {
+				log.Println("forbidden character")
+				_common.CreateResponse(rw, http.StatusBadRequest, "forbidden chacarter", nil)
+				return
+			}
+		}
+
+		if err = _helper.CheckEmailPattern(email); err != nil {
+			_common.CreateResponse(rw, http.StatusBadRequest, err.Error(), nil)
+		}
+
+		if err = _helper.CheckPhonePattern(phone); err != nil {
+			_common.CreateResponse(rw, http.StatusBadRequest, err.Error(), nil)
+		}
+
+		if err = _helper.CheckPasswordPattern(password); err != nil {
+			_common.CreateResponse(rw, http.StatusBadRequest, err.Error(), nil)
+		}
+
 		existingUser, code, err := uc.repository.GetUserByEmail(newUser.Email)
 
 		if err != nil {
@@ -69,8 +104,16 @@ func (uc UserController) CreateNewUser() http.HandlerFunc {
 			return
 		}
 
-		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+		if err != nil {
+			log.Println(err)
+			_common.CreateResponse(rw, http.StatusInternalServerError, "internal server error", nil)
+			return
+		}
+
 		newUser.Password = string(hashedPassword)
+
 		user, code, err := uc.repository.CreateNewUser(newUser)
 		user.Password = ""
 
@@ -120,7 +163,27 @@ func (uc UserController) Login() http.HandlerFunc {
 			return
 		}
 
+		email := strings.TrimSpace(loginUser.Email)
+		password := strings.TrimSpace(loginUser.Password)
+
+		check := []string{email, password}
+
+		for _, s := range check {
+			if s == "" {
+				log.Println("empty input")
+				_common.CreateResponse(rw, http.StatusBadRequest, "empty input", nil)
+				return
+			}
+
+			if strings.ContainsAny(strings.ReplaceAll(s, " ", ""), ";--") {
+				log.Println("forbidden character")
+				_common.CreateResponse(rw, http.StatusBadRequest, "forbidden chacarter", nil)
+				return
+			}
+		}
+
 		existingUser, code, err := uc.repository.GetUserByEmail(loginUser.Email)
+		existingUser.Password = ""
 
 		if err != nil {
 			_common.CreateResponse(rw, code, err.Error(), nil)
@@ -135,6 +198,16 @@ func (uc UserController) Login() http.HandlerFunc {
 		if err := bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(loginUser.Password)); err != nil {
 			log.Println(err)
 			_common.CreateResponse(rw, http.StatusUnauthorized, "password mismatch", nil)
+			return
 		}
+
+		token, expire, err := _helper.CreateToken(existingUser.Id, existingUser.Role)
+
+		if err != nil {
+			_common.CreateResponse(rw, http.StatusInternalServerError, "internal server error", nil)
+			return
+		}
+
+		_common.CreateResponse(rw, http.StatusOK, "success login", map[string]interface{}{"user": existingUser, "token": token, "expire": expire})
 	}
 }

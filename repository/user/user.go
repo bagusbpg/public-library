@@ -90,7 +90,7 @@ func (ur *UserRepository) GetUserByEmail(email string) (user _entity.User, code 
 	defer row.Close()
 
 	if row.Next() {
-		if err = row.Scan(&user.Role, &user.Name, &user.Email, &user.Phone, &user.Password); err != nil {
+		if err = row.Scan(&user.Id, &user.Role, &user.Name, &user.Email, &user.Phone, &user.Password); err != nil {
 			log.Println(err)
 			code, err = http.StatusInternalServerError, errors.New("internal server error")
 			return

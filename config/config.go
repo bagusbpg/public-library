@@ -2,6 +2,7 @@ package config
 
 import (
 	"bufio"
+	"errors"
 	"log"
 	"os"
 	"strconv"
@@ -14,18 +15,20 @@ type AppConfig struct {
 		Driver     string
 		Connection string
 	}
+	JWTSecret string
 }
 
 var appConfig *AppConfig
 
-func loadEnv() error {
+func loadEnv() (err error) {
 	// open file containing environment variables
 	// default file path is in current directory
 	file, err := os.Open(".env")
 
 	if err != nil {
 		log.Println(err)
-		return err
+		err = errors.New("internal server error")
+		return
 	}
 
 	defer file.Close()
@@ -35,7 +38,8 @@ func loadEnv() error {
 
 	if err = scanner.Err(); err != nil {
 		log.Println(err)
-		return err
+		err = errors.New("internal server error")
+		return
 	}
 
 	env := map[string]string{}
@@ -64,12 +68,13 @@ func loadEnv() error {
 		if _, exist := existingEnv[key]; !exist {
 			if err = os.Setenv(key, value); err != nil {
 				log.Println(err)
-				return err
+				err = errors.New("internal server error")
+				return
 			}
 		}
 	}
 
-	return nil
+	return
 }
 
 func GetConfig() (*AppConfig, error) {
@@ -82,6 +87,7 @@ func GetConfig() (*AppConfig, error) {
 		initConfig.ServerPort, _ = strconv.Atoi(os.Getenv("SERVER_PORT"))
 		initConfig.Database.Driver = os.Getenv("DB_DRIVER")
 		initConfig.Database.Connection = os.Getenv("DB_CONNECTION_STRING")
+		initConfig.JWTSecret = os.Getenv("JWT_SECRET")
 
 		appConfig = &initConfig
 	}
