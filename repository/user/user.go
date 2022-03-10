@@ -2,7 +2,6 @@ package user
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	_entity "plain-go/public-library/entity"
@@ -35,9 +34,8 @@ func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User
 	defer stmt.Close()
 
 	// execute statement
-	time := time.Now()
-	fmt.Println(time)
-	res, err := stmt.Exec(newUser.Name, newUser.Email, newUser.Phone, newUser.Password, time, time)
+	now := time.Now()
+	res, err := stmt.Exec(newUser.Name, newUser.Email, newUser.Phone, newUser.Password, now, now)
 
 	if err != nil {
 		log.Println(err)
@@ -57,8 +55,8 @@ func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User
 	user = newUser
 	user.Id = int(id)
 	user.Role = "Member"
-	user.CreatedAt = time
-	user.UpdatedAt = time
+	user.CreatedAt = now
+	user.UpdatedAt = now
 
 	return
 }
@@ -105,7 +103,7 @@ func (ur *UserRepository) GetUserByEmail(email string) (user _entity.User, code 
 func (ur *UserRepository) GetUserById(userId int) (user _entity.User, code int, err error) {
 	// prepare statement before query or execution
 	stmt, err := ur.db.Prepare(`
-		SELECT role, name, email, phone, password
+		SELECT role, name, email, phone, password, created_at, updated_at
 		FROM users
 		WHERE deleted_at IS NULL
 		  AND id = ?
@@ -131,7 +129,7 @@ func (ur *UserRepository) GetUserById(userId int) (user _entity.User, code int, 
 	defer row.Close()
 
 	if row.Next() {
-		if err = row.Scan(&user.Role, &user.Name, &user.Email, &user.Phone, &user.Password); err != nil {
+		if err = row.Scan(&user.Role, &user.Name, &user.Email, &user.Phone, &user.Password, &user.CreatedAt, &user.UpdatedAt); err != nil {
 			log.Println(err)
 			code, err = http.StatusInternalServerError, errors.New("internal server error")
 			return
@@ -145,7 +143,7 @@ func (ur *UserRepository) UpdateUser(updatedUser _entity.User) (user _entity.Use
 	// prepare statement before query or execution
 	stmt, err := ur.db.Prepare(`
 		UPDATE users
-		SET name = ?, email = ?, phone = ?, password = ?, updated_at = CURRENT_TIMESTAMP
+		SET name = ?, email = ?, phone = ?, password = ?, updated_at = ?
 		WHERE deleted_at IS NULL
 		  AND id = ?
 	`)
@@ -159,7 +157,8 @@ func (ur *UserRepository) UpdateUser(updatedUser _entity.User) (user _entity.Use
 	defer stmt.Close()
 
 	// execute statement
-	_, err = stmt.Exec(updatedUser.Name, updatedUser.Email, updatedUser.Phone, updatedUser.Password, updatedUser.Id)
+	now := time.Now()
+	_, err = stmt.Exec(updatedUser.Name, updatedUser.Email, updatedUser.Phone, updatedUser.Password, now, updatedUser.Id)
 
 	if err != nil {
 		log.Println(err)
@@ -168,6 +167,7 @@ func (ur *UserRepository) UpdateUser(updatedUser _entity.User) (user _entity.Use
 	}
 
 	user = updatedUser
+	user.UpdatedAt = now
 
 	return
 }

@@ -2,7 +2,6 @@ package config
 
 import (
 	"bufio"
-	"errors"
 	"log"
 	"os"
 	"strconv"
@@ -27,7 +26,6 @@ func loadEnv() (err error) {
 
 	if err != nil {
 		log.Println(err)
-		err = errors.New("internal server error")
 		return
 	}
 
@@ -38,7 +36,6 @@ func loadEnv() (err error) {
 
 	if err = scanner.Err(); err != nil {
 		log.Println(err)
-		err = errors.New("internal server error")
 		return
 	}
 
@@ -68,7 +65,6 @@ func loadEnv() (err error) {
 		if _, exist := existingEnv[key]; !exist {
 			if err = os.Setenv(key, value); err != nil {
 				log.Println(err)
-				err = errors.New("internal server error")
 				return
 			}
 		}

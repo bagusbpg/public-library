@@ -23,14 +23,14 @@ func main() {
 	config, err := _config.GetConfig()
 
 	if err != nil {
-		log.Fatalln(err)
+		panic("error in application configuration")
 	}
 
 	// get database instance
 	db, err := _util.GetDBInstance(config)
 
 	if err != nil {
-		log.Fatalln(err)
+		panic("error in database connection")
 	}
 
 	userRepository := _userRepository.New(db)
@@ -43,6 +43,6 @@ func main() {
 	// start the server
 	fmt.Println("Listening...")
 	if err := http.ListenAndServe(":3000", mux); err != nil {
-		log.Fatalln(err)
+		panic("error in listen and serve")
 	}
 }

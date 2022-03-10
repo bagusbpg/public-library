@@ -7,8 +7,9 @@ import (
 
 func Router(
 	mux *http.ServeMux,
-	userController *_user.UserController,
+	user *_user.UserController,
 ) {
-	mux.Handle("/login", userController.Login())
-	mux.Handle("/users", userController.SignUp())
+	mux.Handle("/login", user.Login())
+	mux.Handle("/users", user.SignUp())
+	mux.Handle("/users/", user.GetUpdateDelete())
 }
