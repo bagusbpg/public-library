@@ -10,5 +10,5 @@ func Router(
 	userController *_user.UserController,
 ) {
 	mux.Handle("/login", userController.Login())
-	mux.Handle("/signup", userController.CreateNewUser())
+	mux.Handle("/users", userController.SignUp())
 }

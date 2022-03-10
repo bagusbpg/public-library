@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	_entity "plain-go/public-library/entity"
@@ -35,6 +36,7 @@ func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User
 
 	// execute statement
 	time := time.Now()
+	fmt.Println(time)
 	res, err := stmt.Exec(newUser.Name, newUser.Email, newUser.Phone, newUser.Password, time, time)
 
 	if err != nil {
@@ -64,7 +66,7 @@ func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User
 func (ur *UserRepository) GetUserByEmail(email string) (user _entity.User, code int, err error) {
 	// prepare statment before query or execution
 	stmt, err := ur.db.Prepare(`
-		SELECT id, role, name, phone, password
+		SELECT id, role, name, phone, password, created_at, updated_at
 		FROM users
 		WHERE deleted_at IS NULL
 		  AND email = ?
@@ -90,7 +92,7 @@ func (ur *UserRepository) GetUserByEmail(email string) (user _entity.User, code 
 	defer row.Close()
 
 	if row.Next() {
-		if err = row.Scan(&user.Id, &user.Role, &user.Name, &user.Email, &user.Phone, &user.Password); err != nil {
+		if err = row.Scan(&user.Id, &user.Role, &user.Name, &user.Phone, &user.Password, &user.CreatedAt, &user.UpdatedAt); err != nil {
 			log.Println(err)
 			code, err = http.StatusInternalServerError, errors.New("internal server error")
 			return

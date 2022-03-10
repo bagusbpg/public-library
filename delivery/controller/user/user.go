@@ -2,6 +2,7 @@ package user
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	_entity "plain-go/public-library/entity"
 	_userRepository "plain-go/public-library/repository/user"
 	"strings"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -22,7 +24,7 @@ func New(user _userRepository.User) *UserController {
 	return &UserController{repository: user}
 }
 
-func (uc UserController) CreateNewUser() http.HandlerFunc {
+func (uc UserController) SignUp() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		rw.Header().Add("Content-Type", "application/json")
 
@@ -62,7 +64,7 @@ func (uc UserController) CreateNewUser() http.HandlerFunc {
 		name := strings.Title(strings.TrimSpace(newUser.Name))
 		email := strings.TrimSpace(newUser.Email)
 		phone := strings.TrimSpace(newUser.Phone)
-		password := strings.TrimSpace(newUser.Phone)
+		password := strings.TrimSpace(newUser.Password)
 
 		check := []string{name, email, phone, password}
 
@@ -82,14 +84,17 @@ func (uc UserController) CreateNewUser() http.HandlerFunc {
 
 		if err = _helper.CheckEmailPattern(email); err != nil {
 			_common.CreateResponse(rw, http.StatusBadRequest, err.Error(), nil)
+			return
 		}
 
 		if err = _helper.CheckPhonePattern(phone); err != nil {
 			_common.CreateResponse(rw, http.StatusBadRequest, err.Error(), nil)
+			return
 		}
 
 		if err = _helper.CheckPasswordPattern(password); err != nil {
 			_common.CreateResponse(rw, http.StatusBadRequest, err.Error(), nil)
+			return
 		}
 
 		existingUser, code, err := uc.repository.GetUserByEmail(newUser.Email)
@@ -104,7 +109,7 @@ func (uc UserController) CreateNewUser() http.HandlerFunc {
 			return
 		}
 
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 
 		if err != nil {
 			log.Println(err)
@@ -183,7 +188,6 @@ func (uc UserController) Login() http.HandlerFunc {
 		}
 
 		existingUser, code, err := uc.repository.GetUserByEmail(loginUser.Email)
-		existingUser.Password = ""
 
 		if err != nil {
 			_common.CreateResponse(rw, code, err.Error(), nil)
@@ -195,7 +199,8 @@ func (uc UserController) Login() http.HandlerFunc {
 			return
 		}
 
-		if err := bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(loginUser.Password)); err != nil {
+		if err := bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(password)); err != nil {
+			fmt.Println(existingUser.Password, password)
 			log.Println(err)
 			_common.CreateResponse(rw, http.StatusUnauthorized, "password mismatch", nil)
 			return
@@ -207,6 +212,10 @@ func (uc UserController) Login() http.HandlerFunc {
 			_common.CreateResponse(rw, http.StatusInternalServerError, "internal server error", nil)
 			return
 		}
+
+		existingUser.Password = ""
+		existingUser.CreatedAt = existingUser.CreatedAt.Add(7 * time.Hour)
+		existingUser.UpdatedAt = existingUser.UpdatedAt.Add(7 * time.Hour)
 
 		_common.CreateResponse(rw, http.StatusOK, "success login", map[string]interface{}{"user": existingUser, "token": token, "expire": expire})
 	}

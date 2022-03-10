@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	_config "plain-go/public-library/config"
 	_userController "plain-go/public-library/delivery/controller/user"
 	_router "plain-go/public-library/delivery/router"
@@ -13,6 +14,7 @@ import (
 )
 
 func init() {
+	os.Setenv("TZ", "Asia/Jakarta")
 	log.SetFlags(log.Llongfile | log.LstdFlags)
 }
 
