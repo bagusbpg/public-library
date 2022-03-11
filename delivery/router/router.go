@@ -3,13 +3,14 @@ package router
 import (
 	"net/http"
 	_user "plain-go/public-library/delivery/controller/user"
+	_middleware "plain-go/public-library/delivery/middleware"
 )
 
 func Router(
 	mux *http.ServeMux,
 	user *_user.UserController,
 ) {
-	mux.Handle("/login", user.Login())
-	mux.Handle("/users", user.SignUp())
-	mux.Handle("/users/", user.GetUpdateDelete())
+	mux.Handle("/login", _middleware.Logger(user.Login()))
+	mux.Handle("/users", _middleware.Logger(user.SignUp()))
+	mux.Handle("/users/", _middleware.Logger(user.GetUpdateDelete()))
 }
