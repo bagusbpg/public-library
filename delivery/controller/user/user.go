@@ -26,8 +26,6 @@ func New(user _userRepository.User) *UserController {
 
 func (uc UserController) SignUp() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		rw.Header().Add("Content-Type", "application/json")
-
 		if r.Method != http.MethodPost {
 			log.Println("method not allowed")
 			_common.CreateResponse(rw, http.StatusMethodNotAllowed, "method not allowed", nil)
@@ -135,8 +133,6 @@ func (uc UserController) SignUp() http.HandlerFunc {
 
 func (uc UserController) Login() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		rw.Header().Add("Content-Type", "application/json")
-
 		if r.Method != http.MethodPost {
 			log.Println("method not allowed")
 			_common.CreateResponse(rw, http.StatusMethodNotAllowed, "method not allowed", nil)
@@ -224,15 +220,7 @@ func (uc UserController) Login() http.HandlerFunc {
 
 func (uc UserController) GetUpdateDelete() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		rw.Header().Add("Content-Type", "application/json")
-
 		token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
-
-		if token == "" {
-			log.Println("missing or malformed jwt")
-			_common.CreateResponse(rw, http.StatusBadRequest, "missing or malformed jwt", nil)
-			return
-		}
 
 		loginId, role, err := _helper.ExtractToken(token)
 

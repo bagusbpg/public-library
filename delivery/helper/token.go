@@ -3,8 +3,9 @@ package helper
 import (
 	"errors"
 	"log"
-	_config "plain-go/public-library/config"
 	"time"
+
+	_config "plain-go/public-library/config"
 
 	"github.com/golang-jwt/jwt"
 )
@@ -60,12 +61,6 @@ func ExtractToken(tokenString string) (id int, role string, err error) {
 	if !ok || !token.Valid {
 		log.Println("invalid jwt")
 		err = errors.New("invalid jwt")
-		return
-	}
-
-	if expire := int64(claims["exp"].(float64)); expire < time.Now().Unix() {
-		log.Println("expired jwt")
-		err = errors.New("expired jwt")
 		return
 	}
 
