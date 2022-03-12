@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
+	_router "plain-go/public-library/app/router"
 	_config "plain-go/public-library/config"
+	_userRepository "plain-go/public-library/datastore/user"
 	_userController "plain-go/public-library/delivery/controller/user"
-	_router "plain-go/public-library/delivery/router"
-	_userRepository "plain-go/public-library/repository/user"
 	_util "plain-go/public-library/util"
 
 	"log"

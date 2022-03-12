@@ -17,5 +17,7 @@ func ValidateId(handler http.Handler) http.Handler {
 			_common.CreateResponse(rw, http.StatusBadRequest, "invalid user id", nil)
 			return
 		}
+
+		handler.ServeHTTP(rw, r)
 	})
 }
