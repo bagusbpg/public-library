@@ -167,6 +167,33 @@ func (br *BookRepository) CreateBookAuthorJunction(book _entity.Book, author _en
 	return
 }
 
+func (br *BookRepository) CreateBookItem(book _entity.Book) (code int, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		INSERT INTO book_items (book_id, status, created_at, updated_at)
+		VALUES (?, 'AVAILABLE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+	`)
+
+	if err != nil {
+		log.Println(err)
+		code, err = http.StatusInternalServerError, errors.New("internal server error")
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	_, err = stmt.Exec(book.Id)
+
+	if err != nil {
+		log.Println(err)
+		code, err = http.StatusInternalServerError, errors.New("internal server error")
+		return
+	}
+
+	return
+}
+
 func (br *BookRepository) GetAllBooks() (books []_entity.Book, code int, err error) {
 	// prepare statment before execution
 	stmt, err := br.db.Prepare(`
@@ -201,17 +228,13 @@ func (br *BookRepository) GetAllBooks() (books []_entity.Book, code int, err err
 			return
 		}
 
-		authors, _, _ := br.getBookAuthors(book.Id)
-
-		book.Author = authors
-
 		books = append(books, book)
 	}
 
 	return
 }
 
-func (br *BookRepository) getBookAuthors(bookId int) (authors []_entity.Author, code int, err error) {
+func (br *BookRepository) GetBookAuthors(bookId int) (authors []_entity.Author, code int, err error) {
 	// prepare statement before execution
 	stmt, err := br.db.Prepare(`
 		SELECT a.id, a.name

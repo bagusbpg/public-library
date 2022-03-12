@@ -8,7 +8,7 @@ import (
 	_common "plain-go/public-library/delivery/common"
 )
 
-func Authorization(handler http.Handler) http.Handler {
+func Authentication(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
 

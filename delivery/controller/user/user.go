@@ -220,30 +220,7 @@ func (uc UserController) Login() http.HandlerFunc {
 
 func (uc UserController) GetUpdateDelete() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
-
-		loginId, role, err := _helper.ExtractToken(token)
-
-		if err != nil {
-			_common.CreateResponse(rw, http.StatusUnauthorized, err.Error(), nil)
-			return
-		}
-
-		id := strings.TrimPrefix(r.URL.Path, "/users/")
-
-		userId, err := strconv.Atoi(id)
-
-		if err != nil {
-			log.Println(err)
-			_common.CreateResponse(rw, http.StatusBadRequest, "invalid user id", nil)
-			return
-		}
-
-		if loginId != userId && role != "Administrator" {
-			log.Println("forbidden")
-			_common.CreateResponse(rw, http.StatusForbidden, "forbidden", nil)
-			return
-		}
+		userId, _ := strconv.Atoi(strings.SplitAfter(r.URL.Path, "/")[2])
 
 		existingUser, code, err := uc.repository.GetUserById(userId)
 
