@@ -14,21 +14,23 @@ type User struct {
 }
 
 type Book struct {
-	Id        int    `json:"id"`
-	Title     string `json:"title"`
-	Author    []Author
-	Publisher Publisher `json:"publisher"`
-	Language  Language  `json:"language"`
-	Pages     int       `json:"pages"`
-	Category  Category
-	ISBN13    string    `json:"isbn13"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	Id          int    `json:"id"`
+	Title       string `json:"title"`
+	Author      []Author
+	Publisher   string    `json:"publisher"`
+	Language    string    `json:"language"`
+	Pages       int       `json:"pages"`
+	Category    string    `json:"category"`
+	ISBN13      string    `json:"isbn13"`
+	Description string    `json:"description"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 type BookItem struct {
-	Id   int
-	Book Book
+	Id     int
+	Book   Book
+	Status BookStatus
 }
 
 type Author struct {
@@ -36,19 +38,9 @@ type Author struct {
 	Name string `json:"author"`
 }
 
-type Publisher struct {
-	Id   int
-	Name string `json:"publisher"`
-}
-
-type Language struct {
+type BookStatus struct {
 	Id          int
-	Description string `json:"language"`
-}
-
-type Category struct {
-	Id          int
-	Description string `json:"category"`
+	Description string
 }
 
 type Review struct {
@@ -63,17 +55,17 @@ type Review struct {
 
 type Rent struct {
 	Id          int
-	Book        Book
+	Book        BookItem
 	User        User
 	Description string `json:"description"`
-	Status      Status
+	Status      RentStatus
 	Activity    Activity
 	StartAt     time.Time `json:"start_at"`
 	ReturnAt    time.Time `json:"return_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-type Status struct {
+type RentStatus struct {
 	Id          int
 	Description string `json:"status"`
 }

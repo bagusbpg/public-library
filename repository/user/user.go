@@ -19,7 +19,7 @@ func New(db *sql.DB) *UserRepository {
 }
 
 func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User, code int, err error) {
-	// prepare statement before query or execution
+	// prepare statement before execution
 	stmt, err := ur.db.Prepare(`
 		INSERT INTO users (role, name, email, phone, password, created_at, updated_at)
 		VALUES ('Member', ?, ?, ?, ?, ?, ?)
@@ -62,7 +62,7 @@ func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User
 }
 
 func (ur *UserRepository) GetUserByEmail(email string) (user _entity.User, code int, err error) {
-	// prepare statment before query or execution
+	// prepare statment before execution
 	stmt, err := ur.db.Prepare(`
 		SELECT id, role, name, phone, password, created_at, updated_at
 		FROM users
@@ -101,7 +101,7 @@ func (ur *UserRepository) GetUserByEmail(email string) (user _entity.User, code 
 }
 
 func (ur *UserRepository) GetUserById(userId int) (user _entity.User, code int, err error) {
-	// prepare statement before query or execution
+	// prepare statement before execution
 	stmt, err := ur.db.Prepare(`
 		SELECT role, name, email, phone, password, created_at, updated_at
 		FROM users
@@ -140,7 +140,7 @@ func (ur *UserRepository) GetUserById(userId int) (user _entity.User, code int, 
 }
 
 func (ur *UserRepository) UpdateUser(updatedUser _entity.User) (user _entity.User, code int, err error) {
-	// prepare statement before query or execution
+	// prepare statement before execution
 	stmt, err := ur.db.Prepare(`
 		UPDATE users
 		SET name = ?, email = ?, phone = ?, password = ?, updated_at = ?
@@ -173,7 +173,7 @@ func (ur *UserRepository) UpdateUser(updatedUser _entity.User) (user _entity.Use
 }
 
 func (ur *UserRepository) DeleteUser(userId int) (code int, err error) {
-	// prepare statement before query or execution
+	// prepare statement before execution
 	stmt, err := ur.db.Prepare(`
 		UPDATE users
 		SET deleted_at = CURRENT_TIMESTAMP
