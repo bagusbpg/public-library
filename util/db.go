@@ -1,7 +1,7 @@
 package util
 
 import (
-	_config "plain-go/public-library/config"
+	_config "plain-go/public-library/app/config"
 
 	"database/sql"
 

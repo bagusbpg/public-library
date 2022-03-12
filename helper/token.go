@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	_config "plain-go/public-library/config"
+	_config "plain-go/public-library/app/config"
 
 	"github.com/golang-jwt/jwt"
 )

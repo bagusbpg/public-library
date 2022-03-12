@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	_config "plain-go/public-library/app/config"
 	_router "plain-go/public-library/app/router"
-	_config "plain-go/public-library/config"
 	_userRepository "plain-go/public-library/datastore/user"
 	_userController "plain-go/public-library/delivery/controller/user"
 	_util "plain-go/public-library/util"
