@@ -7,6 +7,7 @@ import (
 	_router "plain-go/public-library/app/router"
 	_userRepository "plain-go/public-library/datastore/user"
 	_userController "plain-go/public-library/delivery/controller/user"
+	_userUseCase "plain-go/public-library/usecase/user"
 	_util "plain-go/public-library/util"
 
 	"log"
@@ -34,7 +35,8 @@ func main() {
 	}
 
 	userRepository := _userRepository.New(db)
-	userController := _userController.New(userRepository)
+	userUseCase := _userUseCase.New(userRepository)
+	userController := _userController.New(userUseCase)
 
 	// register handlers
 	mux := http.NewServeMux()
