@@ -7,7 +7,7 @@ import (
 type User interface {
 	CreateNewUser(newUser _entity.User) (user _entity.User, err error)
 	GetUserByEmail(email string) (user _entity.User, err error)
-	GetUserById(userId int) (user _entity.User, code int, err error)
-	UpdateUser(updatedUser _entity.User) (user _entity.User, code int, err error)
-	DeleteUser(userId int) (code int, err error)
+	GetUserById(userId int) (user _entity.User, err error)
+	UpdateUser(updatedUser _entity.User) (user _entity.User, err error)
+	DeleteUser(userId int) (err error)
 }

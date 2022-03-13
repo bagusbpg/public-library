@@ -1,9 +1,7 @@
 package user
 
 import (
-	"errors"
 	"log"
-	"net/http"
 	_entity "plain-go/public-library/entity"
 	"time"
 
@@ -94,7 +92,7 @@ func (ur *UserRepository) GetUserByEmail(email string) (user _entity.User, err e
 	return
 }
 
-func (ur *UserRepository) GetUserById(userId int) (user _entity.User, code int, err error) {
+func (ur *UserRepository) GetUserById(userId int) (user _entity.User, err error) {
 	// prepare statement before execution
 	stmt, err := ur.db.Prepare(`
 		SELECT role, name, email, phone, password, created_at, updated_at
@@ -105,7 +103,6 @@ func (ur *UserRepository) GetUserById(userId int) (user _entity.User, code int, 
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -116,7 +113,6 @@ func (ur *UserRepository) GetUserById(userId int) (user _entity.User, code int, 
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -125,7 +121,6 @@ func (ur *UserRepository) GetUserById(userId int) (user _entity.User, code int, 
 	if row.Next() {
 		if err = row.Scan(&user.Role, &user.Name, &user.Email, &user.Phone, &user.Password, &user.CreatedAt, &user.UpdatedAt); err != nil {
 			log.Println(err)
-			code, err = http.StatusInternalServerError, errors.New("internal server error")
 			return
 		}
 	}
@@ -133,7 +128,7 @@ func (ur *UserRepository) GetUserById(userId int) (user _entity.User, code int, 
 	return
 }
 
-func (ur *UserRepository) UpdateUser(updatedUser _entity.User) (user _entity.User, code int, err error) {
+func (ur *UserRepository) UpdateUser(updatedUser _entity.User) (user _entity.User, err error) {
 	// prepare statement before execution
 	stmt, err := ur.db.Prepare(`
 		UPDATE users
@@ -144,7 +139,6 @@ func (ur *UserRepository) UpdateUser(updatedUser _entity.User) (user _entity.Use
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -156,7 +150,6 @@ func (ur *UserRepository) UpdateUser(updatedUser _entity.User) (user _entity.Use
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -166,7 +159,7 @@ func (ur *UserRepository) UpdateUser(updatedUser _entity.User) (user _entity.Use
 	return
 }
 
-func (ur *UserRepository) DeleteUser(userId int) (code int, err error) {
+func (ur *UserRepository) DeleteUser(userId int) (err error) {
 	// prepare statement before execution
 	stmt, err := ur.db.Prepare(`
 		UPDATE users
@@ -177,32 +170,15 @@ func (ur *UserRepository) DeleteUser(userId int) (code int, err error) {
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
 	defer stmt.Close()
 
 	// execute statement
-	res, err := stmt.Exec(userId)
+	_, err = stmt.Exec(userId)
 
 	if err != nil {
-		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
-		return
-	}
-
-	// check user existence
-	row, err := res.RowsAffected()
-
-	if err != nil {
-		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
-		return
-	}
-
-	if row == 0 {
-		code, err = http.StatusNotFound, errors.New("user not found")
 		log.Println(err)
 		return
 	}
