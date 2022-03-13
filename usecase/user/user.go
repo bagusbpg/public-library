@@ -66,10 +66,11 @@ func (uuc UserUseCase) SignUp(req _model.SignUpRequest) (res _model.SignUpRespon
 	}
 
 	// calling repository
-	existingUser, code, err := uuc.repository.GetUserByEmail(email)
+	existingUser, err := uuc.repository.GetUserByEmail(email)
 
 	// detect failure in repository
 	if err != nil {
+		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -98,10 +99,11 @@ func (uuc UserUseCase) SignUp(req _model.SignUpRequest) (res _model.SignUpRespon
 	newUser.Password = string(hashedPassword)
 
 	// calling repository
-	res.User, code, err = uuc.repository.CreateNewUser(newUser)
+	res.User, err = uuc.repository.CreateNewUser(newUser)
 
 	// detect failure in repository
 	if err != nil {
+		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -137,10 +139,11 @@ func (uuc UserUseCase) Login(req _model.LoginRequest) (res _model.LoginResponse,
 	}
 
 	// calling repository
-	existingUser, code, err := uuc.repository.GetUserByEmail(email)
+	existingUser, err := uuc.repository.GetUserByEmail(email)
 
 	// detect failure in repository
 	if err != nil {
+		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 

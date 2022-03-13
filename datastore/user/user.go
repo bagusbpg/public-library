@@ -18,7 +18,7 @@ func New(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User, code int, err error) {
+func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User, err error) {
 	// prepare statement before execution
 	stmt, err := ur.db.Prepare(`
 		INSERT INTO users (role, name, email, phone, password, created_at, updated_at)
@@ -27,7 +27,6 @@ func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -39,7 +38,6 @@ func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -48,7 +46,6 @@ func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -61,7 +58,7 @@ func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User
 	return
 }
 
-func (ur *UserRepository) GetUserByEmail(email string) (user _entity.User, code int, err error) {
+func (ur *UserRepository) GetUserByEmail(email string) (user _entity.User, err error) {
 	// prepare statment before execution
 	stmt, err := ur.db.Prepare(`
 		SELECT id, role, name, phone, password, created_at, updated_at
@@ -72,7 +69,6 @@ func (ur *UserRepository) GetUserByEmail(email string) (user _entity.User, code 
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -83,7 +79,6 @@ func (ur *UserRepository) GetUserByEmail(email string) (user _entity.User, code 
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -92,7 +87,6 @@ func (ur *UserRepository) GetUserByEmail(email string) (user _entity.User, code 
 	if row.Next() {
 		if err = row.Scan(&user.Id, &user.Role, &user.Name, &user.Phone, &user.Password, &user.CreatedAt, &user.UpdatedAt); err != nil {
 			log.Println(err)
-			code, err = http.StatusInternalServerError, errors.New("internal server error")
 			return
 		}
 	}
