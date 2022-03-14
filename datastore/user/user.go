@@ -3,7 +3,6 @@ package user
 import (
 	"log"
 	_entity "plain-go/public-library/entity"
-	"time"
 
 	"database/sql"
 )
@@ -17,10 +16,10 @@ func New(db *sql.DB) *UserRepository {
 }
 
 func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User, err error) {
-	// prepare statement before execution
+	// prepare statement
 	stmt, err := ur.db.Prepare(`
 		INSERT INTO users (role, name, email, phone, password, created_at, updated_at)
-		VALUES ('Member', ?, ?, ?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
 	`)
 
 	if err != nil {
@@ -31,8 +30,7 @@ func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User
 	defer stmt.Close()
 
 	// execute statement
-	now := time.Now()
-	res, err := stmt.Exec(newUser.Name, newUser.Email, newUser.Phone, newUser.Password, now, now)
+	res, err := stmt.Exec(newUser.Role, newUser.Name, newUser.Email, newUser.Phone, newUser.Password, newUser.CreatedAt, newUser.UpdatedAt)
 
 	if err != nil {
 		log.Println(err)
@@ -49,9 +47,6 @@ func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User
 
 	user = newUser
 	user.Id = int(id)
-	user.Role = "Member"
-	user.CreatedAt = now
-	user.UpdatedAt = now
 
 	return
 }
@@ -93,7 +88,7 @@ func (ur *UserRepository) GetUserByEmail(email string) (user _entity.User, err e
 }
 
 func (ur *UserRepository) GetUserById(userId int) (user _entity.User, err error) {
-	// prepare statement before execution
+	// prepare statement
 	stmt, err := ur.db.Prepare(`
 		SELECT role, name, email, phone, password, created_at, updated_at
 		FROM users
@@ -129,12 +124,11 @@ func (ur *UserRepository) GetUserById(userId int) (user _entity.User, err error)
 }
 
 func (ur *UserRepository) UpdateUser(updatedUser _entity.User) (user _entity.User, err error) {
-	// prepare statement before execution
+	// prepare statement
 	stmt, err := ur.db.Prepare(`
 		UPDATE users
 		SET name = ?, email = ?, phone = ?, password = ?, updated_at = ?
-		WHERE deleted_at IS NULL
-		  AND id = ?
+		WHERE id = ?
 	`)
 
 	if err != nil {
@@ -145,8 +139,7 @@ func (ur *UserRepository) UpdateUser(updatedUser _entity.User) (user _entity.Use
 	defer stmt.Close()
 
 	// execute statement
-	now := time.Now()
-	_, err = stmt.Exec(updatedUser.Name, updatedUser.Email, updatedUser.Phone, updatedUser.Password, now, updatedUser.Id)
+	_, err = stmt.Exec(updatedUser.Name, updatedUser.Email, updatedUser.Phone, updatedUser.Password, updatedUser.UpdatedAt, updatedUser.Id)
 
 	if err != nil {
 		log.Println(err)
@@ -154,18 +147,16 @@ func (ur *UserRepository) UpdateUser(updatedUser _entity.User) (user _entity.Use
 	}
 
 	user = updatedUser
-	user.UpdatedAt = now
 
 	return
 }
 
 func (ur *UserRepository) DeleteUser(userId int) (err error) {
-	// prepare statement before execution
+	// prepare statement
 	stmt, err := ur.db.Prepare(`
 		UPDATE users
 		SET deleted_at = CURRENT_TIMESTAMP
-		WHERE deleted_at IS NULL
-		  AND id = ?
+		WHERE id = ?
 	`)
 
 	if err != nil {

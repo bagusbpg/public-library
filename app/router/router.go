@@ -3,7 +3,7 @@ package router
 import (
 	"net/http"
 	_mw "plain-go/public-library/app/middleware"
-	_user "plain-go/public-library/delivery/controller/user"
+	_user "plain-go/public-library/controller/user"
 )
 
 func Router(

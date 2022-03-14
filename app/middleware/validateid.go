@@ -3,7 +3,7 @@ package middleware
 import (
 	"log"
 	"net/http"
-	_common "plain-go/public-library/delivery/common"
+	_model "plain-go/public-library/model"
 	"strconv"
 	"strings"
 )
@@ -14,7 +14,7 @@ func ValidateId(handler http.Handler) http.Handler {
 
 		if err != nil {
 			log.Println(err)
-			_common.CreateResponse(rw, http.StatusBadRequest, "invalid user id", nil)
+			_model.CreateResponse(rw, http.StatusBadRequest, "invalid user id", nil)
 			return
 		}
 

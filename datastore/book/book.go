@@ -19,7 +19,7 @@ func New(db *sql.DB) *BookRepository {
 }
 
 func (br *BookRepository) GetAllAuthors() (authors []_entity.Author, code int, err error) {
-	// prepare statment before execution
+	// prepare statement
 	stmt, err := br.db.Prepare(`
 		SELECT id, name
 		FROM authors
@@ -60,7 +60,7 @@ func (br *BookRepository) GetAllAuthors() (authors []_entity.Author, code int, e
 }
 
 func (br *BookRepository) CreateNewBook(newBook _entity.Book) (book _entity.Book, code int, err error) {
-	// prepare statment before execution
+	// prepare statement
 	stmt, err := br.db.Prepare(`
 		INSERT INTO books (title, publisher, language, pages, category, isbn13, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -141,7 +141,7 @@ func (br *BookRepository) CreateNewAuthor(newAuthor _entity.Author) (author _ent
 }
 
 func (br *BookRepository) CreateBookAuthorJunction(book _entity.Book, author _entity.Author) (code int, err error) {
-	// prepare statment before execution
+	// prepare statement
 	stmt, err := br.db.Prepare(`
 		INSERT INTO book_author_junction (book_id, author_id)
 		VALUES (?, ?)
@@ -195,7 +195,7 @@ func (br *BookRepository) CreateBookItem(book _entity.Book) (code int, err error
 }
 
 func (br *BookRepository) GetAllBooks() (books []_entity.Book, code int, err error) {
-	// prepare statment before execution
+	// prepare statement
 	stmt, err := br.db.Prepare(`
 		SELECT id, title, publisher, language, pages, category, isbn13, description, created_at, updated_at
 		FROM books

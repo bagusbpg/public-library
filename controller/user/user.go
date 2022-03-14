@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	_common "plain-go/public-library/delivery/common"
 	_model "plain-go/public-library/model"
 	_userUseCase "plain-go/public-library/usecase/user"
 )
@@ -22,7 +21,7 @@ func (uc UserController) SignUp() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			log.Println("method not allowed")
-			_common.CreateResponse(rw, http.StatusMethodNotAllowed, "method not allowed", nil)
+			_model.CreateResponse(rw, http.StatusMethodNotAllowed, "method not allowed", nil)
 			return
 		}
 
@@ -30,7 +29,7 @@ func (uc UserController) SignUp() http.HandlerFunc {
 
 		if err != nil {
 			log.Println(err)
-			_common.CreateResponse(rw, http.StatusInternalServerError, "failed to read request body", nil)
+			_model.CreateResponse(rw, http.StatusInternalServerError, "failed to read request body", nil)
 			return
 		}
 
@@ -40,7 +39,7 @@ func (uc UserController) SignUp() http.HandlerFunc {
 
 		if contentType != "application/json" {
 			log.Println("unsupported content type")
-			_common.CreateResponse(rw, http.StatusUnsupportedMediaType, "unsupported content type", nil)
+			_model.CreateResponse(rw, http.StatusUnsupportedMediaType, "unsupported content type", nil)
 			return
 		}
 
@@ -49,18 +48,18 @@ func (uc UserController) SignUp() http.HandlerFunc {
 
 		if err != nil {
 			log.Println(err)
-			_common.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
+			_model.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
 			return
 		}
 
 		res, code, err := uc.usecase.SignUp(req)
 
 		if err != nil {
-			_common.CreateResponse(rw, code, err.Error(), nil)
+			_model.CreateResponse(rw, code, err.Error(), nil)
 			return
 		}
 
-		_common.CreateResponse(rw, http.StatusCreated, "success create user", res)
+		_model.CreateResponse(rw, http.StatusCreated, "success create user", res)
 	}
 }
 
@@ -68,7 +67,7 @@ func (uc UserController) Login() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			log.Println("method not allowed")
-			_common.CreateResponse(rw, http.StatusMethodNotAllowed, "method not allowed", nil)
+			_model.CreateResponse(rw, http.StatusMethodNotAllowed, "method not allowed", nil)
 			return
 		}
 
@@ -76,7 +75,7 @@ func (uc UserController) Login() http.HandlerFunc {
 
 		if err != nil {
 			log.Println(err)
-			_common.CreateResponse(rw, http.StatusInternalServerError, "failed to read request body", nil)
+			_model.CreateResponse(rw, http.StatusInternalServerError, "failed to read request body", nil)
 			return
 		}
 
@@ -86,7 +85,7 @@ func (uc UserController) Login() http.HandlerFunc {
 
 		if contentType != "application/json" {
 			log.Println("unsupported content type")
-			_common.CreateResponse(rw, http.StatusUnsupportedMediaType, "unsupported content type", nil)
+			_model.CreateResponse(rw, http.StatusUnsupportedMediaType, "unsupported content type", nil)
 			return
 		}
 
@@ -95,18 +94,18 @@ func (uc UserController) Login() http.HandlerFunc {
 
 		if err != nil {
 			log.Println(err)
-			_common.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
+			_model.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
 			return
 		}
 
 		res, code, err := uc.usecase.Login(req)
 
 		if err != nil {
-			_common.CreateResponse(rw, code, err.Error(), nil)
+			_model.CreateResponse(rw, code, err.Error(), nil)
 			return
 		}
 
-		_common.CreateResponse(rw, http.StatusOK, "success login", res)
+		_model.CreateResponse(rw, http.StatusOK, "success login", res)
 	}
 }
 
@@ -117,12 +116,12 @@ func (uc UserController) Login() http.HandlerFunc {
 // 		existingUser, code, err := uc.repository.GetUserById(userId)
 
 // 		if err != nil {
-// 			_common.CreateResponse(rw, code, err.Error(), nil)
+// 			_model.CreateResponse(rw, code, err.Error(), nil)
 // 			return
 // 		}
 
 // 		if existingUser == (_entity.User{}) {
-// 			_common.CreateResponse(rw, http.StatusNotFound, "user not found", nil)
+// 			_model.CreateResponse(rw, http.StatusNotFound, "user not found", nil)
 // 			return
 // 		}
 
@@ -133,13 +132,13 @@ func (uc UserController) Login() http.HandlerFunc {
 // 			existingUser.CreatedAt = existingUser.CreatedAt.Add(7 * time.Hour)
 // 			existingUser.UpdatedAt = existingUser.UpdatedAt.Add(7 * time.Hour)
 
-// 			_common.CreateResponse(rw, http.StatusOK, "success get user", existingUser)
+// 			_model.CreateResponse(rw, http.StatusOK, "success get user", existingUser)
 // 		case http.MethodPut:
 // 			body, err := ioutil.ReadAll(r.Body)
 
 // 			if err != nil {
 // 				log.Println(err)
-// 				_common.CreateResponse(rw, http.StatusInternalServerError, "failed to read request body", nil)
+// 				_model.CreateResponse(rw, http.StatusInternalServerError, "failed to read request body", nil)
 // 				return
 // 			}
 
@@ -149,7 +148,7 @@ func (uc UserController) Login() http.HandlerFunc {
 
 // 			if contentType != "application/json" {
 // 				log.Println("unsupported content type")
-// 				_common.CreateResponse(rw, http.StatusUnsupportedMediaType, "unsupported content type", nil)
+// 				_model.CreateResponse(rw, http.StatusUnsupportedMediaType, "unsupported content type", nil)
 // 				return
 // 			}
 
@@ -158,7 +157,7 @@ func (uc UserController) Login() http.HandlerFunc {
 
 // 			if err != nil {
 // 				log.Println(err)
-// 				_common.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
+// 				_model.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
 // 				return
 // 			}
 
@@ -173,7 +172,7 @@ func (uc UserController) Login() http.HandlerFunc {
 // 			for _, s := range check {
 // 				if strings.ContainsAny(strings.ReplaceAll(s, " ", ""), ";--") {
 // 					log.Println("forbidden character")
-// 					_common.CreateResponse(rw, http.StatusBadRequest, "forbidden chacarter", nil)
+// 					_model.CreateResponse(rw, http.StatusBadRequest, "forbidden chacarter", nil)
 // 					return
 // 				}
 
@@ -184,7 +183,7 @@ func (uc UserController) Login() http.HandlerFunc {
 
 // 			if flag {
 // 				log.Println("no update was performed")
-// 				_common.CreateResponse(rw, http.StatusBadRequest, "no update was performed", nil)
+// 				_model.CreateResponse(rw, http.StatusBadRequest, "no update was performed", nil)
 // 				return
 // 			}
 
@@ -194,7 +193,7 @@ func (uc UserController) Login() http.HandlerFunc {
 
 // 			if email != "" {
 // 				if err = _helper.CheckEmailPattern(email); err != nil {
-// 					_common.CreateResponse(rw, http.StatusBadRequest, err.Error(), nil)
+// 					_model.CreateResponse(rw, http.StatusBadRequest, err.Error(), nil)
 // 					return
 // 				}
 
@@ -203,7 +202,7 @@ func (uc UserController) Login() http.HandlerFunc {
 
 // 			if phone != "" {
 // 				if err = _helper.CheckPhonePattern(phone); err != nil {
-// 					_common.CreateResponse(rw, http.StatusBadRequest, err.Error(), nil)
+// 					_model.CreateResponse(rw, http.StatusBadRequest, err.Error(), nil)
 // 					return
 // 				}
 
@@ -212,7 +211,7 @@ func (uc UserController) Login() http.HandlerFunc {
 
 // 			if password != "" {
 // 				if err = _helper.CheckPasswordPattern(password); err != nil {
-// 					_common.CreateResponse(rw, http.StatusBadRequest, err.Error(), nil)
+// 					_model.CreateResponse(rw, http.StatusBadRequest, err.Error(), nil)
 // 					return
 // 				}
 
@@ -220,7 +219,7 @@ func (uc UserController) Login() http.HandlerFunc {
 
 // 				if err != nil {
 // 					log.Println(err)
-// 					_common.CreateResponse(rw, http.StatusInternalServerError, "failed to hash password", nil)
+// 					_model.CreateResponse(rw, http.StatusInternalServerError, "failed to hash password", nil)
 // 					return
 // 				}
 
@@ -234,23 +233,23 @@ func (uc UserController) Login() http.HandlerFunc {
 // 			user.UpdatedAt, _ = _helper.TimeFormatter(user.UpdatedAt)
 
 // 			if err != nil {
-// 				_common.CreateResponse(rw, code, err.Error(), nil)
+// 				_model.CreateResponse(rw, code, err.Error(), nil)
 // 				return
 // 			}
 
-// 			_common.CreateResponse(rw, http.StatusCreated, "success update user", user)
+// 			_model.CreateResponse(rw, http.StatusCreated, "success update user", user)
 // 		case http.MethodDelete:
 // 			code, err := uc.repository.DeleteUser(userId)
 
 // 			if err != nil {
-// 				_common.CreateResponse(rw, code, err.Error(), nil)
+// 				_model.CreateResponse(rw, code, err.Error(), nil)
 // 				return
 // 			}
 
-// 			_common.CreateResponse(rw, http.StatusOK, "success delete user", nil)
+// 			_model.CreateResponse(rw, http.StatusOK, "success delete user", nil)
 // 		default:
 // 			log.Println("method not allowed")
-// 			_common.CreateResponse(rw, http.StatusMethodNotAllowed, "method not allowed", nil)
+// 			_model.CreateResponse(rw, http.StatusMethodNotAllowed, "method not allowed", nil)
 // 			return
 // 		}
 // 	}

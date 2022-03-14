@@ -25,3 +25,7 @@ type SignUpRequest struct {
 type SignUpResponse struct {
 	User _entity.User
 }
+
+type GetUserByIdResponse struct {
+	User _entity.User
+}

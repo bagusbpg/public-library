@@ -3,8 +3,8 @@ package middleware
 import (
 	"log"
 	"net/http"
-	_common "plain-go/public-library/delivery/common"
 	_helper "plain-go/public-library/helper"
+	_model "plain-go/public-library/model"
 	"strconv"
 	"strings"
 )
@@ -16,7 +16,7 @@ func Authorization(handler http.Handler) http.Handler {
 		loginId, role, err := _helper.ExtractToken(token)
 
 		if err != nil {
-			_common.CreateResponse(rw, http.StatusUnauthorized, err.Error(), nil)
+			_model.CreateResponse(rw, http.StatusUnauthorized, err.Error(), nil)
 			return
 		}
 
@@ -24,7 +24,7 @@ func Authorization(handler http.Handler) http.Handler {
 
 		if loginId != userId && role != "Administrator" {
 			log.Println("forbidden")
-			_common.CreateResponse(rw, http.StatusForbidden, "forbidden", nil)
+			_model.CreateResponse(rw, http.StatusForbidden, "forbidden", nil)
 			return
 		}
 

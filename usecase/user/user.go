@@ -92,11 +92,15 @@ func (uuc UserUseCase) SignUp(req _model.SignUpRequest) (res _model.SignUpRespon
 	}
 
 	// prepare input to repository
+	now := time.Now()
 	newUser := _entity.User{}
+	newUser.Role = "Member"
 	newUser.Name = name
 	newUser.Email = email
 	newUser.Phone = phone
 	newUser.Password = string(hashedPassword)
+	newUser.CreatedAt = now
+	newUser.UpdatedAt = now
 
 	// calling repository
 	res.User, err = uuc.repository.CreateNewUser(newUser)
@@ -179,5 +183,9 @@ func (uuc UserUseCase) Login(req _model.LoginRequest) (res _model.LoginResponse,
 	res.Expire = expire
 	res.User = existingUser
 
+	return
+}
+
+func (uuc UserUseCase) Get(userId int) (res _model.GetUserByIdResponse, code int, err error) {
 	return
 }

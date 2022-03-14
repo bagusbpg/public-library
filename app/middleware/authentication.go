@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	_common "plain-go/public-library/delivery/common"
+	_model "plain-go/public-library/model"
 )
 
 func Authentication(handler http.Handler) http.Handler {
@@ -14,7 +14,7 @@ func Authentication(handler http.Handler) http.Handler {
 
 		if token == "" {
 			log.Println("missing or malformed jwt")
-			_common.CreateResponse(rw, http.StatusBadRequest, "missing or malformed jwt", nil)
+			_model.CreateResponse(rw, http.StatusBadRequest, "missing or malformed jwt", nil)
 			return
 		}
 
