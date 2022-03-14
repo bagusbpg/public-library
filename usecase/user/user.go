@@ -1,7 +1,6 @@
 package user
 
 import (
-	"errors"
 	"log"
 	"net/http"
 	_userRepository "plain-go/public-library/datastore/user"
@@ -22,7 +21,7 @@ func New(user _userRepository.User) *UserUseCase {
 	return &UserUseCase{repository: user}
 }
 
-func (uuc UserUseCase) SignUp(req _model.SignUpRequest) (res _model.SignUpResponse, code int, err error) {
+func (uuc UserUseCase) SignUp(req _model.SignUpRequest) (res _model.SignUpResponse, code int, message string) {
 	// prepare input string
 	name := strings.Title(strings.TrimSpace(req.Name))
 	email := strings.TrimSpace(req.Email)
@@ -35,49 +34,47 @@ func (uuc UserUseCase) SignUp(req _model.SignUpRequest) (res _model.SignUpRespon
 		// check if required input is empty
 		if s == "" {
 			log.Println("empty input")
-			code, err = http.StatusBadRequest, errors.New("empty input")
+			code, message = http.StatusBadRequest, "empty input"
 			return
 		}
 
 		// check if there is any forbidden character in required field
 		if strings.ContainsAny(strings.ReplaceAll(s, " ", ""), ";--") {
 			log.Println("forbidden character")
-			code, err = http.StatusBadRequest, errors.New("forbidden chacarter")
+			code, message = http.StatusBadRequest, "forbidden chacarter"
 			return
 		}
 	}
 
 	// check if email pattern invalid
-	if err = _helper.CheckEmailPattern(email); err != nil {
-		code = http.StatusBadRequest
+	if err := _helper.CheckEmailPattern(email); err != nil {
+		code, message = http.StatusBadRequest, err.Error()
 		return
 	}
 
 	// check if phone pattern invalid
-	if err = _helper.CheckPhonePattern(phone); err != nil {
-		code = http.StatusBadRequest
+	if err := _helper.CheckPhonePattern(phone); err != nil {
+		code, message = http.StatusBadRequest, err.Error()
 		return
 	}
 
 	// check if password pattern invalid
-	if err = _helper.CheckPasswordPattern(password); err != nil {
-		code = http.StatusBadRequest
-		return
-	}
-
-	// calling repository
-	existingUser, err := uuc.repository.GetUserByEmail(email)
-
-	// detect failure in repository
-	if err != nil {
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
+	if err := _helper.CheckPasswordPattern(password); err != nil {
+		code, message = http.StatusBadRequest, err.Error()
 		return
 	}
 
 	// check if email is already used by other account
-	if existingUser != (_entity.User{}) {
+	newUser, err := uuc.repository.GetUserByEmail(email)
+
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	if newUser != (_entity.User{}) {
 		log.Println("email already used")
-		code, err = http.StatusConflict, errors.New("email already used")
+		code, message = http.StatusConflict, "email already used"
 		return
 	}
 
@@ -87,13 +84,12 @@ func (uuc UserUseCase) SignUp(req _model.SignUpRequest) (res _model.SignUpRespon
 	// detect failure in hashing password
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("failed to hash password")
+		code, message = http.StatusInternalServerError, "failed to hash password"
 		return
 	}
 
 	// prepare input to repository
 	now := time.Now()
-	newUser := _entity.User{}
 	newUser.Role = "Member"
 	newUser.Name = name
 	newUser.Email = email
@@ -107,7 +103,7 @@ func (uuc UserUseCase) SignUp(req _model.SignUpRequest) (res _model.SignUpRespon
 
 	// detect failure in repository
 	if err != nil {
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
+		code, message = http.StatusInternalServerError, "internal server error"
 		return
 	}
 
@@ -115,11 +111,12 @@ func (uuc UserUseCase) SignUp(req _model.SignUpRequest) (res _model.SignUpRespon
 	res.User.Password = ""
 	res.User.CreatedAt, _ = _helper.TimeFormatter(res.User.CreatedAt)
 	res.User.UpdatedAt, _ = _helper.TimeFormatter(res.User.UpdatedAt)
+	code, message = http.StatusCreated, "success create user"
 
 	return
 }
 
-func (uuc UserUseCase) Login(req _model.LoginRequest) (res _model.LoginResponse, code int, err error) {
+func (uuc UserUseCase) Login(req _model.LoginRequest) (res _model.LoginResponse, code int, message string) {
 	// prepare input string
 	email := strings.TrimSpace(req.Email)
 	password := strings.TrimSpace(req.Password)
@@ -130,62 +127,196 @@ func (uuc UserUseCase) Login(req _model.LoginRequest) (res _model.LoginResponse,
 		// check if required input is empty
 		if s == "" {
 			log.Println("empty input")
-			code, err = http.StatusBadRequest, errors.New("empty input")
+			code, message = http.StatusBadRequest, "empty input"
 			return
 		}
 
 		// check if there is any forbidden character in required field
 		if strings.ContainsAny(strings.ReplaceAll(s, " ", ""), ";--") {
 			log.Println("forbidden character")
-			code, err = http.StatusBadRequest, errors.New("forbidden chacarter")
+			code, message = http.StatusBadRequest, "forbidden chacarter"
 			return
 		}
 	}
 
 	// calling repository
-	existingUser, err := uuc.repository.GetUserByEmail(email)
+	user, err := uuc.repository.GetUserByEmail(email)
 
 	// detect failure in repository
 	if err != nil {
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
+		code, message = http.StatusInternalServerError, "internal server error"
 		return
 	}
 
+	res.User = user
+
 	// check if user does not exist
-	if existingUser == (_entity.User{}) {
+	if res.User == (_entity.User{}) {
 		log.Println("user not found")
-		code, err = http.StatusNotFound, errors.New("user not found")
+		code, message = http.StatusNotFound, "user not found"
 		return
 	}
 
 	// check if password matches
-	if err = bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(res.User.Password), []byte(password)); err != nil {
 		log.Println(err)
-		code, err = http.StatusUnauthorized, errors.New("password mismatch")
+		code, message = http.StatusUnauthorized, "password mismatch"
 		return
 	}
 
 	// create token
-	token, expire, err := _helper.CreateToken(existingUser.Id, existingUser.Role)
+	token, expire, err := _helper.CreateToken(res.User.Id, res.User.Role)
 
 	// detect error while creating token
 	if err != nil {
-		code = http.StatusInternalServerError
+		code, message = http.StatusInternalServerError, "failed to create token"
 		return
 	}
 
 	// formatting response
-	existingUser.Password = ""
-	existingUser.CreatedAt = existingUser.CreatedAt.Add(7 * time.Hour)
-	existingUser.UpdatedAt = existingUser.UpdatedAt.Add(7 * time.Hour)
-
+	res.User.Password = ""
+	res.User.CreatedAt = res.User.CreatedAt.Add(7 * time.Hour)
+	res.User.UpdatedAt = res.User.UpdatedAt.Add(7 * time.Hour)
 	res.Token = token
 	res.Expire = expire
-	res.User = existingUser
+	code, message = http.StatusOK, "success login"
 
 	return
 }
 
-func (uuc UserUseCase) Get(userId int) (res _model.GetUserByIdResponse, code int, err error) {
+func (uuc UserUseCase) GetUserById(userId int) (res _model.GetUserByIdResponse, code int, message string) {
+	// calling repository
+	user, err := uuc.repository.GetUserById(userId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	res.User = user
+
+	// check if user does not exist
+	if res.User == (_entity.User{}) {
+		log.Println("user not found")
+		code, message = http.StatusNotFound, "user not found"
+		return
+	}
+
+	// formatting response
+	res.User.Id = userId
+	res.User.Password = ""
+	res.User.CreatedAt = res.User.CreatedAt.Add(7 * time.Hour)
+	res.User.UpdatedAt = res.User.UpdatedAt.Add(7 * time.Hour)
+	code, message = http.StatusOK, "success get user"
+
+	return
+}
+
+func (uuc UserUseCase) UpdateUser(req _model.UpdateUserRequest, user _entity.User) (res _model.UpdateUserResponse, code int, message string) {
+	// prepare input string
+	name := strings.Title(strings.TrimSpace(req.Name))
+	email := strings.TrimSpace(req.Email)
+	phone := strings.TrimSpace(req.Phone)
+	password := strings.TrimSpace(req.Password)
+
+	check := []string{name, email, phone, password}
+	flag := true
+
+	for _, s := range check {
+		// check if there is any forbidden character in required field
+		if strings.ContainsAny(strings.ReplaceAll(s, " ", ""), ";--") {
+			log.Println("forbidden character")
+			code, message = http.StatusBadRequest, "forbidden chacarter"
+			return
+		}
+
+		// check if any field is updated
+		if s != "" {
+			flag = false
+		}
+	}
+
+	// check if no field is updated
+	if flag {
+		log.Println("no update was performed")
+		code, message = http.StatusBadRequest, "no update was performed"
+		return
+	}
+
+	if name != "" {
+		user.Name = name
+	}
+
+	if email != "" {
+		// check if email pattern invalid
+		if err := _helper.CheckEmailPattern(email); err != nil {
+			code, message = http.StatusBadRequest, err.Error()
+			return
+		}
+
+		user.Email = email
+	}
+
+	if phone != "" {
+		// check if phone pattern invalid
+		if err := _helper.CheckPhonePattern(phone); err != nil {
+			code, message = http.StatusBadRequest, err.Error()
+			return
+		}
+
+		user.Phone = phone
+	}
+
+	if password != "" {
+		// check if password pattern invalid
+		if err := _helper.CheckPasswordPattern(password); err != nil {
+			code, message = http.StatusBadRequest, err.Error()
+			return
+		}
+
+		// hashing password before storing in database
+		hashedPassword, errhash := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+
+		// detect failure in hashing password
+		if errhash != nil {
+			log.Println(errhash)
+			code, message = http.StatusInternalServerError, "failed to hash password"
+			return
+		}
+
+		user.Password = string(hashedPassword)
+	}
+
+	// calling respository
+	_user, err := uuc.repository.UpdateUser(user)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// formatting response
+	res.User = _user
+	res.User.Id = user.Id
+	res.User.Password = ""
+	res.User.CreatedAt = res.User.CreatedAt.Add(7 * time.Hour)
+	res.User.UpdatedAt, _ = _helper.TimeFormatter(res.User.UpdatedAt)
+	code, message = http.StatusOK, "success update user"
+
+	return
+}
+
+func (uuc UserUseCase) DeleteUser(userId int) (code int, message string) {
+	// valling repository
+	err := uuc.repository.DeleteUser(userId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
 	return
 }

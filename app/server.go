@@ -5,10 +5,10 @@ import (
 	"os"
 	_config "plain-go/public-library/app/config"
 	_router "plain-go/public-library/app/router"
+	_util "plain-go/public-library/app/util"
 	_userController "plain-go/public-library/controller/user"
 	_userRepository "plain-go/public-library/datastore/user"
 	_userUseCase "plain-go/public-library/usecase/user"
-	_util "plain-go/public-library/util"
 
 	"log"
 	"net/http"

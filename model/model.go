@@ -29,3 +29,14 @@ type SignUpResponse struct {
 type GetUserByIdResponse struct {
 	User _entity.User
 }
+
+type UpdateUserRequest struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Phone    string `json:"phone"`
+	Password string `json:"password"`
+}
+
+type UpdateUserResponse struct {
+	User _entity.User
+}

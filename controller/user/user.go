@@ -7,6 +7,8 @@ import (
 	"net/http"
 	_model "plain-go/public-library/model"
 	_userUseCase "plain-go/public-library/usecase/user"
+	"strconv"
+	"strings"
 )
 
 type UserController struct {
@@ -52,14 +54,14 @@ func (uc UserController) SignUp() http.HandlerFunc {
 			return
 		}
 
-		res, code, err := uc.usecase.SignUp(req)
+		res, code, message := uc.usecase.SignUp(req)
 
-		if err != nil {
-			_model.CreateResponse(rw, code, err.Error(), nil)
+		if code != http.StatusOK {
+			_model.CreateResponse(rw, code, message, nil)
 			return
 		}
 
-		_model.CreateResponse(rw, http.StatusCreated, "success create user", res)
+		_model.CreateResponse(rw, code, message, res)
 	}
 }
 
@@ -98,159 +100,80 @@ func (uc UserController) Login() http.HandlerFunc {
 			return
 		}
 
-		res, code, err := uc.usecase.Login(req)
+		res, code, message := uc.usecase.Login(req)
 
-		if err != nil {
-			_model.CreateResponse(rw, code, err.Error(), nil)
+		if code != http.StatusOK {
+			_model.CreateResponse(rw, code, message, nil)
 			return
 		}
 
-		_model.CreateResponse(rw, http.StatusOK, "success login", res)
+		_model.CreateResponse(rw, code, message, res)
 	}
 }
 
-// func (uc UserController) GetUpdateDelete() http.HandlerFunc {
-// 	return func(rw http.ResponseWriter, r *http.Request) {
-// 		userId, _ := strconv.Atoi(strings.SplitAfter(r.URL.Path, "/")[2])
+func (uc UserController) GetUpdateDelete() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		userId, _ := strconv.Atoi(strings.SplitAfter(r.URL.Path, "/")[2])
 
-// 		existingUser, code, err := uc.repository.GetUserById(userId)
+		existing, code, message := uc.usecase.GetUserById(userId)
 
-// 		if err != nil {
-// 			_model.CreateResponse(rw, code, err.Error(), nil)
-// 			return
-// 		}
+		if code != http.StatusOK {
+			_model.CreateResponse(rw, code, message, nil)
+			return
+		}
 
-// 		if existingUser == (_entity.User{}) {
-// 			_model.CreateResponse(rw, http.StatusNotFound, "user not found", nil)
-// 			return
-// 		}
+		switch r.Method {
+		case http.MethodGet:
+			_model.CreateResponse(rw, code, message, existing.User)
+		case http.MethodPut:
+			body, err := ioutil.ReadAll(r.Body)
 
-// 		switch r.Method {
-// 		case http.MethodGet:
-// 			existingUser.Id = userId
-// 			existingUser.Password = ""
-// 			existingUser.CreatedAt = existingUser.CreatedAt.Add(7 * time.Hour)
-// 			existingUser.UpdatedAt = existingUser.UpdatedAt.Add(7 * time.Hour)
+			if err != nil {
+				log.Println(err)
+				_model.CreateResponse(rw, http.StatusInternalServerError, "failed to read request body", nil)
+				return
+			}
 
-// 			_model.CreateResponse(rw, http.StatusOK, "success get user", existingUser)
-// 		case http.MethodPut:
-// 			body, err := ioutil.ReadAll(r.Body)
+			defer r.Body.Close()
 
-// 			if err != nil {
-// 				log.Println(err)
-// 				_model.CreateResponse(rw, http.StatusInternalServerError, "failed to read request body", nil)
-// 				return
-// 			}
+			contentType := r.Header.Get("content-type")
 
-// 			defer r.Body.Close()
+			if contentType != "application/json" {
+				log.Println("unsupported content type")
+				_model.CreateResponse(rw, http.StatusUnsupportedMediaType, "unsupported content type", nil)
+				return
+			}
 
-// 			contentType := r.Header.Get("content-type")
+			req := _model.UpdateUserRequest{}
+			err = json.Unmarshal(body, &req)
 
-// 			if contentType != "application/json" {
-// 				log.Println("unsupported content type")
-// 				_model.CreateResponse(rw, http.StatusUnsupportedMediaType, "unsupported content type", nil)
-// 				return
-// 			}
+			if err != nil {
+				log.Println(err)
+				_model.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
+				return
+			}
 
-// 			updatedUser := _entity.User{}
-// 			err = json.Unmarshal(body, &updatedUser)
+			res, code, message := uc.usecase.UpdateUser(req, existing.User)
 
-// 			if err != nil {
-// 				log.Println(err)
-// 				_model.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
-// 				return
-// 			}
+			if code != http.StatusCreated {
+				_model.CreateResponse(rw, code, message, nil)
+				return
+			}
 
-// 			name := strings.Title(strings.TrimSpace(updatedUser.Name))
-// 			email := strings.TrimSpace(updatedUser.Email)
-// 			phone := strings.TrimSpace(updatedUser.Phone)
-// 			password := strings.TrimSpace(updatedUser.Password)
+			_model.CreateResponse(rw, code, message, res)
+		case http.MethodDelete:
+			code, message := uc.usecase.DeleteUser(userId)
 
-// 			check := []string{name, email, phone, password}
-// 			flag := true
+			if code != http.StatusOK {
+				_model.CreateResponse(rw, code, message, nil)
+				return
+			}
 
-// 			for _, s := range check {
-// 				if strings.ContainsAny(strings.ReplaceAll(s, " ", ""), ";--") {
-// 					log.Println("forbidden character")
-// 					_model.CreateResponse(rw, http.StatusBadRequest, "forbidden chacarter", nil)
-// 					return
-// 				}
-
-// 				if s != "" {
-// 					flag = false
-// 				}
-// 			}
-
-// 			if flag {
-// 				log.Println("no update was performed")
-// 				_model.CreateResponse(rw, http.StatusBadRequest, "no update was performed", nil)
-// 				return
-// 			}
-
-// 			if name != "" {
-// 				existingUser.Name = name
-// 			}
-
-// 			if email != "" {
-// 				if err = _helper.CheckEmailPattern(email); err != nil {
-// 					_model.CreateResponse(rw, http.StatusBadRequest, err.Error(), nil)
-// 					return
-// 				}
-
-// 				existingUser.Email = email
-// 			}
-
-// 			if phone != "" {
-// 				if err = _helper.CheckPhonePattern(phone); err != nil {
-// 					_model.CreateResponse(rw, http.StatusBadRequest, err.Error(), nil)
-// 					return
-// 				}
-
-// 				existingUser.Phone = phone
-// 			}
-
-// 			if password != "" {
-// 				if err = _helper.CheckPasswordPattern(password); err != nil {
-// 					_model.CreateResponse(rw, http.StatusBadRequest, err.Error(), nil)
-// 					return
-// 				}
-
-// 				hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
-
-// 				if err != nil {
-// 					log.Println(err)
-// 					_model.CreateResponse(rw, http.StatusInternalServerError, "failed to hash password", nil)
-// 					return
-// 				}
-
-// 				existingUser.Password = string(hashedPassword)
-// 			}
-
-// 			user, code, err := uc.repository.UpdateUser(existingUser)
-// 			user.Id = userId
-// 			user.Password = ""
-// 			user.CreatedAt = user.CreatedAt.Add(7 * time.Hour)
-// 			user.UpdatedAt, _ = _helper.TimeFormatter(user.UpdatedAt)
-
-// 			if err != nil {
-// 				_model.CreateResponse(rw, code, err.Error(), nil)
-// 				return
-// 			}
-
-// 			_model.CreateResponse(rw, http.StatusCreated, "success update user", user)
-// 		case http.MethodDelete:
-// 			code, err := uc.repository.DeleteUser(userId)
-
-// 			if err != nil {
-// 				_model.CreateResponse(rw, code, err.Error(), nil)
-// 				return
-// 			}
-
-// 			_model.CreateResponse(rw, http.StatusOK, "success delete user", nil)
-// 		default:
-// 			log.Println("method not allowed")
-// 			_model.CreateResponse(rw, http.StatusMethodNotAllowed, "method not allowed", nil)
-// 			return
-// 		}
-// 	}
-// }
+			_model.CreateResponse(rw, code, message, nil)
+		default:
+			log.Println("method not allowed")
+			_model.CreateResponse(rw, http.StatusMethodNotAllowed, "method not allowed", nil)
+			return
+		}
+	}
+}
