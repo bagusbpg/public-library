@@ -205,7 +205,6 @@ func (uuc UserUseCase) GetUserById(userId int) (res _model.GetUserByIdResponse, 
 
 	// formatting response
 	res.User.Id = userId
-	res.User.Password = ""
 	res.User.CreatedAt = res.User.CreatedAt.Add(7 * time.Hour)
 	res.User.UpdatedAt = res.User.UpdatedAt.Add(7 * time.Hour)
 	code, message = http.StatusOK, "success get user"
@@ -289,6 +288,7 @@ func (uuc UserUseCase) UpdateUser(req _model.UpdateUserRequest, user _entity.Use
 	}
 
 	// calling respository
+	user.UpdatedAt = time.Now()
 	_user, err := uuc.repository.UpdateUser(user)
 
 	// detect failure in repository
@@ -301,7 +301,6 @@ func (uuc UserUseCase) UpdateUser(req _model.UpdateUserRequest, user _entity.Use
 	res.User = _user
 	res.User.Id = user.Id
 	res.User.Password = ""
-	res.User.CreatedAt = res.User.CreatedAt.Add(7 * time.Hour)
 	res.User.UpdatedAt, _ = _helper.TimeFormatter(res.User.UpdatedAt)
 	code, message = http.StatusOK, "success update user"
 
@@ -309,7 +308,7 @@ func (uuc UserUseCase) UpdateUser(req _model.UpdateUserRequest, user _entity.Use
 }
 
 func (uuc UserUseCase) DeleteUser(userId int) (code int, message string) {
-	// valling repository
+	// calling repository
 	err := uuc.repository.DeleteUser(userId)
 
 	// detect failure in repository
@@ -317,6 +316,8 @@ func (uuc UserUseCase) DeleteUser(userId int) (code int, message string) {
 		code, message = http.StatusInternalServerError, "internal server error"
 		return
 	}
+
+	code, message = http.StatusOK, "success delete user"
 
 	return
 }

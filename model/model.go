@@ -10,9 +10,9 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	Token  string `json:"token"`
-	Expire int64  `json:"expire"`
-	User   _entity.User
+	Token  string       `json:"token"`
+	Expire int64        `json:"expire"`
+	User   _entity.User `json:"user"`
 }
 
 type SignUpRequest struct {
@@ -23,11 +23,11 @@ type SignUpRequest struct {
 }
 
 type SignUpResponse struct {
-	User _entity.User
+	User _entity.User `json:"user"`
 }
 
 type GetUserByIdResponse struct {
-	User _entity.User
+	User _entity.User `json:"user"`
 }
 
 type UpdateUserRequest struct {
@@ -38,5 +38,5 @@ type UpdateUserRequest struct {
 }
 
 type UpdateUserResponse struct {
-	User _entity.User
+	User _entity.User `json:"user"`
 }

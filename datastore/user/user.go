@@ -3,6 +3,7 @@ package user
 import (
 	"log"
 	_entity "plain-go/public-library/entity"
+	"time"
 
 	"database/sql"
 )
@@ -155,7 +156,7 @@ func (ur *UserRepository) DeleteUser(userId int) (err error) {
 	// prepare statement
 	stmt, err := ur.db.Prepare(`
 		UPDATE users
-		SET deleted_at = CURRENT_TIMESTAMP
+		SET deleted_at = ?
 		WHERE id = ?
 	`)
 
@@ -167,7 +168,7 @@ func (ur *UserRepository) DeleteUser(userId int) (err error) {
 	defer stmt.Close()
 
 	// execute statement
-	_, err = stmt.Exec(userId)
+	_, err = stmt.Exec(time.Now(), userId)
 
 	if err != nil {
 		log.Println(err)

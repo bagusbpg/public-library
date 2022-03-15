@@ -56,7 +56,7 @@ func (uc UserController) SignUp() http.HandlerFunc {
 
 		res, code, message := uc.usecase.SignUp(req)
 
-		if code != http.StatusOK {
+		if code != http.StatusCreated {
 			_model.CreateResponse(rw, code, message, nil)
 			return
 		}
@@ -124,6 +124,7 @@ func (uc UserController) GetUpdateDelete() http.HandlerFunc {
 
 		switch r.Method {
 		case http.MethodGet:
+			existing.User.Password = ""
 			_model.CreateResponse(rw, code, message, existing.User)
 		case http.MethodPut:
 			body, err := ioutil.ReadAll(r.Body)
@@ -155,7 +156,7 @@ func (uc UserController) GetUpdateDelete() http.HandlerFunc {
 
 			res, code, message := uc.usecase.UpdateUser(req, existing.User)
 
-			if code != http.StatusCreated {
+			if code != http.StatusOK {
 				_model.CreateResponse(rw, code, message, nil)
 				return
 			}
@@ -164,16 +165,10 @@ func (uc UserController) GetUpdateDelete() http.HandlerFunc {
 		case http.MethodDelete:
 			code, message := uc.usecase.DeleteUser(userId)
 
-			if code != http.StatusOK {
-				_model.CreateResponse(rw, code, message, nil)
-				return
-			}
-
 			_model.CreateResponse(rw, code, message, nil)
 		default:
 			log.Println("method not allowed")
 			_model.CreateResponse(rw, http.StatusMethodNotAllowed, "method not allowed", nil)
-			return
 		}
 	}
 }
