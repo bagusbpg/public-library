@@ -289,7 +289,7 @@ func (br *BookRepository) GetBookAuthors(bookId uint) (authors []_entity.Author,
 	stmt, err := br.db.Prepare(`
 		SELECT a.id, a.name
 		FROM authors a
-		JOIN book_author_juction ba
+		JOIN book_author_junction ba
 		ON a.id = ba.author_id
 		WHERE ba.book_id = ?
 	`)

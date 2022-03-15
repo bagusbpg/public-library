@@ -169,6 +169,34 @@ func (buc BookUseCase) CreateBook(req _model.CreateBookRequest) (res _model.Crea
 	return
 }
 
+func (buc BookUseCase) GetAllBooks() (res _model.GetAllBooksResponse, code int, message string) {
+	// calling repository
+	books, err := buc.repository.GetAllBooks()
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	for _, book := range books {
+		authors, err := buc.repository.GetBookAuthors(book.Id)
+
+		if err != nil {
+			code, message = http.StatusInternalServerError, "internal server error"
+			return
+		}
+
+		book.Author = authors
+	}
+
+	res.Books = books
+	res.Count = uint(len(books))
+	code, message = http.StatusOK, "success get all books"
+
+	return
+}
+
 func (buc BookUseCase) GetBookById(bookId uint) (res _model.GetBookByIdResponse, code int, message string) {
 	// calling repository
 	book, err := buc.repository.GetBookById(bookId)
