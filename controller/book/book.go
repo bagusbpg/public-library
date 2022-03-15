@@ -7,6 +7,8 @@ import (
 	"net/http"
 	_model "plain-go/public-library/model"
 	_bookUseCase "plain-go/public-library/usecase/book"
+	"strconv"
+	"strings"
 )
 
 type BookController struct {
@@ -57,5 +59,20 @@ func (bc BookController) Create() http.HandlerFunc {
 		}
 
 		_model.CreateResponse(rw, code, message, res)
+	}
+}
+
+func (bc BookController) GetUpdateDelete() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		bookId, _ := strconv.Atoi(strings.SplitAfter(r.URL.Path, "/")[2])
+
+		existing, code, message := bc.usecase.GetBookById(uint(bookId))
+
+		if code != http.StatusOK {
+			_model.CreateResponse(rw, code, message, nil)
+			return
+		}
+
+		_model.CreateResponse(rw, code, message, existing.Book)
 	}
 }

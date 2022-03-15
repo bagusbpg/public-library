@@ -197,14 +197,13 @@ func (uuc UserUseCase) GetUserById(userId uint) (res _model.GetUserByIdResponse,
 	res.User = user
 
 	// check if user does not exist
-	if res.User == (_entity.User{}) {
+	if res.User.Name == "" {
 		log.Println("user not found")
 		code, message = http.StatusNotFound, "user not found"
 		return
 	}
 
 	// formatting response
-	res.User.Id = uint(userId)
 	res.User.CreatedAt = res.User.CreatedAt.Add(7 * time.Hour)
 	res.User.UpdatedAt = res.User.UpdatedAt.Add(7 * time.Hour)
 	code, message = http.StatusOK, "success get user"

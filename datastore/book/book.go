@@ -328,7 +328,7 @@ func (br *BookRepository) GetBookAuthors(bookId uint) (authors []_entity.Author,
 func (br *BookRepository) GetBookById(bookId uint) (book _entity.Book, err error) {
 	// prepare statement before execution
 	stmt, err := br.db.Prepare(`
-		SELECT title, publisher, language, pages, category, isbn13, description, created_at, updated_at
+		SELECT id, title, publisher, language, pages, category, isbn13, description, created_at, updated_at
 		FROM books
 		WHERE deleted_at IS NULL
 		  AND id = ?
@@ -352,7 +352,42 @@ func (br *BookRepository) GetBookById(bookId uint) (book _entity.Book, err error
 	defer row.Close()
 
 	if row.Next() {
-		if err = row.Scan(&book.Title, &book.Publisher, &book.Language, &book.Pages, &book.Category, &book.ISBN13, &book.Description, &book.CreatedAt, &book.UpdatedAt); err != nil {
+		if err = row.Scan(&book.Id, &book.Title, &book.Publisher, &book.Language, &book.Pages, &book.Category, &book.ISBN13, &book.Description, &book.CreatedAt, &book.UpdatedAt); err != nil {
+			log.Println(err)
+			return
+		}
+	}
+
+	return
+}
+
+func (br *BookRepository) CountBookById(bookId uint) (count uint, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		SELECT COUNT(id)
+		FROM book_items
+		WHERE book_id = ?
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query(bookId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	if row.Next() {
+		if err = row.Scan(&count); err != nil {
 			log.Println(err)
 			return
 		}

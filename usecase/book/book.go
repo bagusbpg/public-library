@@ -168,3 +168,39 @@ func (buc BookUseCase) CreateBook(req _model.CreateBookRequest) (res _model.Crea
 
 	return
 }
+
+func (buc BookUseCase) GetBookById(bookId uint) (res _model.GetBookByIdResponse, code int, message string) {
+	// calling repository
+	book, err := buc.repository.GetBookById(bookId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	res.Book = book
+
+	// check if book does not exist
+	if res.Book.Title == "" {
+		log.Println("book not found")
+		code, message = http.StatusNotFound, "book not found"
+		return
+	}
+
+	// get book count
+	res.Book.Quantity, err = buc.repository.CountBookById(bookId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// formatting response
+	res.Book.CreatedAt, _ = _helper.TimeFormatter(res.Book.CreatedAt)
+	res.Book.UpdatedAt, _ = _helper.TimeFormatter(res.Book.UpdatedAt)
+	code, message = http.StatusOK, "success get book"
+
+	return
+}

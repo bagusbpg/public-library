@@ -15,6 +15,7 @@ type Book interface {
 	GetAllBooks() (books []_entity.Book, err error)
 	GetBookAuthors(bookId uint) (authors []_entity.Author, err error)
 	GetBookById(bookId uint) (book _entity.Book, err error)
+	CountBookById(bookId uint) (count uint, err error)
 	// UpdateBook(updatedBook _entity.Book) (book _entity.Book, err error)
 	// DeleteBook(bookId int) (err error)
 }

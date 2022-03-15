@@ -16,4 +16,5 @@ func Router(
 	mux.Handle("/users", (_mw.New(_mw.JSONResponse, _mw.Logger).Then(user.SignUp())))
 	mux.Handle("/users/", (_mw.New(_mw.JSONResponse, _mw.Logger, _mw.Authentication, _mw.ValidateId, _mw.Authorization).Then(user.GetUpdateDelete())))
 	mux.Handle("/books", (_mw.New(_mw.JSONResponse, _mw.Logger).Then(book.Create())))
+	mux.Handle("/books/", (_mw.New(_mw.JSONResponse, _mw.Logger).Then(book.GetUpdateDelete())))
 }

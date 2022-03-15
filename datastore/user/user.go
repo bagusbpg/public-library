@@ -91,7 +91,7 @@ func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User
 func (ur *UserRepository) GetUserById(userId uint) (user _entity.User, err error) {
 	// prepare statement
 	stmt, err := ur.db.Prepare(`
-		SELECT role, name, email, phone, password, created_at, updated_at
+		SELECT id, role, name, email, phone, password, created_at, updated_at
 		FROM users
 		WHERE deleted_at IS NULL
 		  AND id = ?
@@ -115,7 +115,7 @@ func (ur *UserRepository) GetUserById(userId uint) (user _entity.User, err error
 	defer row.Close()
 
 	if row.Next() {
-		if err = row.Scan(&user.Role, &user.Name, &user.Email, &user.Phone, &user.Password, &user.CreatedAt, &user.UpdatedAt); err != nil {
+		if err = row.Scan(&user.Id, &user.Role, &user.Name, &user.Email, &user.Phone, &user.Password, &user.CreatedAt, &user.UpdatedAt); err != nil {
 			log.Println(err)
 			return
 		}

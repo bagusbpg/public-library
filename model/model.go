@@ -60,3 +60,7 @@ type CreateBookResponse struct {
 type CreateAuthorRequest struct {
 	Name string `json:"name"`
 }
+
+type GetBookByIdResponse struct {
+	Book _entity.Book `json:"book"`
+}
