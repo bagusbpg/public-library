@@ -40,7 +40,32 @@ func (buc BookUseCase) CreateBook(req _model.CreateBookRequest) (res _model.Crea
 		// check if there is any forbidden character in required field
 		if strings.Contains(strings.ReplaceAll(s, " ", ""), ";--") {
 			log.Println("forbidden character")
-			code, message = http.StatusBadRequest, s+"forbidden character"
+			code, message = http.StatusBadRequest, "forbidden character"
+			return
+		}
+	}
+
+	// check authors
+	if len(req.Author) == 0 {
+		log.Println("empty input")
+		code, message = http.StatusBadRequest, "empty input"
+		return
+	}
+
+	for _, _author := range req.Author {
+		_author.Name = strings.TrimSpace(_author.Name)
+
+		// check if required input is empty
+		if _author.Name == "" {
+			log.Println("empty input")
+			code, message = http.StatusBadRequest, "empty input"
+			return
+		}
+
+		// check if there is any forbidden character in required field
+		if strings.Contains(strings.ReplaceAll(_author.Name, " ", ""), ";--") {
+			log.Println("forbidden character")
+			code, message = http.StatusBadRequest, "forbidden character"
 			return
 		}
 	}
