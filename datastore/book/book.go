@@ -2,10 +2,8 @@ package book
 
 import (
 	"database/sql"
-	"errors"
 	"log"
-	"net/http"
-	"time"
+	"strings"
 
 	_entity "plain-go/public-library/entity"
 )
@@ -18,7 +16,78 @@ func New(db *sql.DB) *BookRepository {
 	return &BookRepository{db: db}
 }
 
-func (br *BookRepository) GetAllAuthors() (authors []_entity.Author, code int, err error) {
+func (br *BookRepository) GetBookByTitle(title string) (book _entity.Book, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		SELECT id, title, publisher, language, pages, category, isbn13, description, created_at, updated_at
+		FROM books
+		WHERE deleted_at IS NULL
+		  AND UPPER(title) LIKE ?
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query(strings.ToUpper(title))
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	if row.Next() {
+		if err = row.Scan(&book.Id, &book.Title, &book.Publisher, &book.Language, &book.Pages, &book.Category, &book.ISBN13, &book.Description, &book.CreatedAt, &book.UpdatedAt); err != nil {
+			log.Println(err)
+			return
+		}
+	}
+
+	return
+}
+
+func (br *BookRepository) GetAuthorByName(name string) (author _entity.Author, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		SELECT id, name
+		FROM authors
+		WHERE UPPER(name) LIKE ?
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query(strings.ToUpper(name))
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	if row.Next() {
+		if err = row.Scan(&author.Id, &author.Name); err != nil {
+			log.Println(err)
+			return
+		}
+	}
+
+	return
+}
+
+func (br *BookRepository) GetAllAuthors() (authors []_entity.Author, err error) {
 	// prepare statement
 	stmt, err := br.db.Prepare(`
 		SELECT id, name
@@ -27,7 +96,6 @@ func (br *BookRepository) GetAllAuthors() (authors []_entity.Author, code int, e
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -38,7 +106,6 @@ func (br *BookRepository) GetAllAuthors() (authors []_entity.Author, code int, e
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -49,7 +116,6 @@ func (br *BookRepository) GetAllAuthors() (authors []_entity.Author, code int, e
 
 		if err = row.Scan(&author.Id, &author.Name); err != nil {
 			log.Println(err)
-			code, err = http.StatusInternalServerError, errors.New("internal server error")
 			return
 		}
 
@@ -59,28 +125,25 @@ func (br *BookRepository) GetAllAuthors() (authors []_entity.Author, code int, e
 	return
 }
 
-func (br *BookRepository) CreateNewBook(newBook _entity.Book) (book _entity.Book, code int, err error) {
+func (br *BookRepository) CreateNewBook(newBook _entity.Book) (book _entity.Book, err error) {
 	// prepare statement
 	stmt, err := br.db.Prepare(`
-		INSERT INTO books (title, publisher, language, pages, category, isbn13, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO books (title, publisher, language, pages, category, isbn13, description, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
 	defer stmt.Close()
 
 	// execute statement
-	now := time.Now()
-	res, err := stmt.Exec(newBook.Title, newBook.Publisher, newBook.Language, newBook.Pages, newBook.Category, newBook.ISBN13, now, now)
+	res, err := stmt.Exec(newBook.Title, newBook.Publisher, newBook.Language, newBook.Pages, newBook.Category, newBook.ISBN13, newBook.Description, newBook.CreatedAt, newBook.UpdatedAt)
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -89,19 +152,16 @@ func (br *BookRepository) CreateNewBook(newBook _entity.Book) (book _entity.Book
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
 	book = newBook
-	book.Id = int(id)
-	book.CreatedAt = now
-	book.UpdatedAt = now
+	book.Id = uint(id)
 
 	return
 }
 
-func (br *BookRepository) CreateNewAuthor(newAuthor _entity.Author) (author _entity.Author, code int, err error) {
+func (br *BookRepository) CreateNewAuthor(newAuthor _entity.Author) (author _entity.Author, err error) {
 	// prepare statement before execution
 	stmt, err := br.db.Prepare(`
 		INSERT INTO authors (name)
@@ -110,7 +170,6 @@ func (br *BookRepository) CreateNewAuthor(newAuthor _entity.Author) (author _ent
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -121,7 +180,6 @@ func (br *BookRepository) CreateNewAuthor(newAuthor _entity.Author) (author _ent
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -130,17 +188,16 @@ func (br *BookRepository) CreateNewAuthor(newAuthor _entity.Author) (author _ent
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
 	author = newAuthor
-	author.Id = int(id)
+	author.Id = uint(id)
 
 	return
 }
 
-func (br *BookRepository) CreateBookAuthorJunction(book _entity.Book, author _entity.Author) (code int, err error) {
+func (br *BookRepository) CreateBookAuthorJunction(book _entity.Book, author _entity.Author) (err error) {
 	// prepare statement
 	stmt, err := br.db.Prepare(`
 		INSERT INTO book_author_junction (book_id, author_id)
@@ -149,7 +206,6 @@ func (br *BookRepository) CreateBookAuthorJunction(book _entity.Book, author _en
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -160,23 +216,21 @@ func (br *BookRepository) CreateBookAuthorJunction(book _entity.Book, author _en
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
 	return
 }
 
-func (br *BookRepository) CreateBookItem(book _entity.Book) (code int, err error) {
+func (br *BookRepository) CreateBookItem(book _entity.Book) (err error) {
 	// prepare statement before execution
 	stmt, err := br.db.Prepare(`
-		INSERT INTO book_items (book_id, status, created_at, updated_at)
-		VALUES (?, 'AVAILABLE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+		INSERT INTO book_items (book_id, status)
+		VALUES (?, 'AVAILABLE')
 	`)
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -187,14 +241,13 @@ func (br *BookRepository) CreateBookItem(book _entity.Book) (code int, err error
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
 	return
 }
 
-func (br *BookRepository) GetAllBooks() (books []_entity.Book, code int, err error) {
+func (br *BookRepository) GetAllBooks() (books []_entity.Book, err error) {
 	// prepare statement
 	stmt, err := br.db.Prepare(`
 		SELECT id, title, publisher, language, pages, category, isbn13, description, created_at, updated_at
@@ -204,7 +257,6 @@ func (br *BookRepository) GetAllBooks() (books []_entity.Book, code int, err err
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -215,7 +267,6 @@ func (br *BookRepository) GetAllBooks() (books []_entity.Book, code int, err err
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -224,7 +275,6 @@ func (br *BookRepository) GetAllBooks() (books []_entity.Book, code int, err err
 
 		if err = row.Scan(&book.Id, &book.Title, &book.Publisher, &book.Language, &book.Pages, &book.Category, &book.ISBN13, &book.Description, &book.CreatedAt, &book.UpdatedAt); err != nil {
 			log.Println(err)
-			code, err = http.StatusInternalServerError, errors.New("internal server error")
 			return
 		}
 
@@ -234,7 +284,7 @@ func (br *BookRepository) GetAllBooks() (books []_entity.Book, code int, err err
 	return
 }
 
-func (br *BookRepository) GetBookAuthors(bookId int) (authors []_entity.Author, code int, err error) {
+func (br *BookRepository) GetBookAuthors(bookId uint) (authors []_entity.Author, err error) {
 	// prepare statement before execution
 	stmt, err := br.db.Prepare(`
 		SELECT a.id, a.name
@@ -246,7 +296,6 @@ func (br *BookRepository) GetBookAuthors(bookId int) (authors []_entity.Author, 
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -257,7 +306,6 @@ func (br *BookRepository) GetBookAuthors(bookId int) (authors []_entity.Author, 
 
 	if err != nil {
 		log.Println(err)
-		code, err = http.StatusInternalServerError, errors.New("internal server error")
 		return
 	}
 
@@ -268,11 +316,46 @@ func (br *BookRepository) GetBookAuthors(bookId int) (authors []_entity.Author, 
 
 		if err = row.Scan(&author.Id, &author.Name); err != nil {
 			log.Println(err)
-			code, err = http.StatusInternalServerError, errors.New("internal server error")
 			return
 		}
 
 		authors = append(authors, author)
+	}
+
+	return
+}
+
+func (br *BookRepository) GetBookById(bookId uint) (book _entity.Book, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		SELECT title, publisher, language, pages, category, isbn13, description, created_at, updated_at
+		FROM books
+		WHERE deleted_at IS NULL
+		  AND id = ?
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query(bookId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	if row.Next() {
+		if err = row.Scan(&book.Title, &book.Publisher, &book.Language, &book.Pages, &book.Category, &book.ISBN13, &book.Description, &book.CreatedAt, &book.UpdatedAt); err != nil {
+			log.Println(err)
+			return
+		}
 	}
 
 	return

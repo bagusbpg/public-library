@@ -39,7 +39,7 @@ func (uuc UserUseCase) SignUp(req _model.SignUpRequest) (res _model.SignUpRespon
 		}
 
 		// check if there is any forbidden character in required field
-		if strings.ContainsAny(strings.ReplaceAll(s, " ", ""), ";--") {
+		if strings.Contains(strings.ReplaceAll(s, " ", ""), ";--") {
 			log.Println("forbidden character")
 			code, message = http.StatusBadRequest, "forbidden chacarter"
 			return
@@ -72,7 +72,7 @@ func (uuc UserUseCase) SignUp(req _model.SignUpRequest) (res _model.SignUpRespon
 		return
 	}
 
-	if newUser != (_entity.User{}) {
+	if newUser.Email != "" {
 		log.Println("email already used")
 		code, message = http.StatusConflict, "email already used"
 		return
@@ -132,7 +132,7 @@ func (uuc UserUseCase) Login(req _model.LoginRequest) (res _model.LoginResponse,
 		}
 
 		// check if there is any forbidden character in required field
-		if strings.ContainsAny(strings.ReplaceAll(s, " ", ""), ";--") {
+		if strings.Contains(strings.ReplaceAll(s, " ", ""), ";--") {
 			log.Println("forbidden character")
 			code, message = http.StatusBadRequest, "forbidden chacarter"
 			return
@@ -184,7 +184,7 @@ func (uuc UserUseCase) Login(req _model.LoginRequest) (res _model.LoginResponse,
 	return
 }
 
-func (uuc UserUseCase) GetUserById(userId int) (res _model.GetUserByIdResponse, code int, message string) {
+func (uuc UserUseCase) GetUserById(userId uint) (res _model.GetUserByIdResponse, code int, message string) {
 	// calling repository
 	user, err := uuc.repository.GetUserById(userId)
 
@@ -204,7 +204,7 @@ func (uuc UserUseCase) GetUserById(userId int) (res _model.GetUserByIdResponse, 
 	}
 
 	// formatting response
-	res.User.Id = userId
+	res.User.Id = uint(userId)
 	res.User.CreatedAt = res.User.CreatedAt.Add(7 * time.Hour)
 	res.User.UpdatedAt = res.User.UpdatedAt.Add(7 * time.Hour)
 	code, message = http.StatusOK, "success get user"
@@ -224,7 +224,7 @@ func (uuc UserUseCase) UpdateUser(req _model.UpdateUserRequest, user _entity.Use
 
 	for _, s := range check {
 		// check if there is any forbidden character in required field
-		if strings.ContainsAny(strings.ReplaceAll(s, " ", ""), ";--") {
+		if strings.Contains(strings.ReplaceAll(s, " ", ""), ";--") {
 			log.Println("forbidden character")
 			code, message = http.StatusBadRequest, "forbidden chacarter"
 			return
@@ -307,7 +307,7 @@ func (uuc UserUseCase) UpdateUser(req _model.UpdateUserRequest, user _entity.Use
 	return
 }
 
-func (uuc UserUseCase) DeleteUser(userId int) (code int, message string) {
+func (uuc UserUseCase) DeleteUser(userId uint) (code int, message string) {
 	// calling repository
 	err := uuc.repository.DeleteUser(userId)
 

@@ -16,6 +16,42 @@ func New(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
+func (ur *UserRepository) GetUserByEmail(email string) (user _entity.User, err error) {
+	// prepare statment before execution
+	stmt, err := ur.db.Prepare(`
+		SELECT id, role, name, email, phone, password, created_at, updated_at
+		FROM users
+		WHERE deleted_at IS NULL
+		  AND email = ?
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query(email)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	if row.Next() {
+		if err = row.Scan(&user.Id, &user.Role, &user.Name, &user.Email, &user.Phone, &user.Password, &user.CreatedAt, &user.UpdatedAt); err != nil {
+			log.Println(err)
+			return
+		}
+	}
+
+	return
+}
+
 func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User, err error) {
 	// prepare statement
 	stmt, err := ur.db.Prepare(`
@@ -47,48 +83,12 @@ func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User
 	}
 
 	user = newUser
-	user.Id = int(id)
+	user.Id = uint(id)
 
 	return
 }
 
-func (ur *UserRepository) GetUserByEmail(email string) (user _entity.User, err error) {
-	// prepare statment before execution
-	stmt, err := ur.db.Prepare(`
-		SELECT id, role, name, phone, password, created_at, updated_at
-		FROM users
-		WHERE deleted_at IS NULL
-		  AND email = ?
-	`)
-
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	defer stmt.Close()
-
-	// execute statement
-	row, err := stmt.Query(email)
-
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	defer row.Close()
-
-	if row.Next() {
-		if err = row.Scan(&user.Id, &user.Role, &user.Name, &user.Phone, &user.Password, &user.CreatedAt, &user.UpdatedAt); err != nil {
-			log.Println(err)
-			return
-		}
-	}
-
-	return
-}
-
-func (ur *UserRepository) GetUserById(userId int) (user _entity.User, err error) {
+func (ur *UserRepository) GetUserById(userId uint) (user _entity.User, err error) {
 	// prepare statement
 	stmt, err := ur.db.Prepare(`
 		SELECT role, name, email, phone, password, created_at, updated_at
@@ -152,7 +152,7 @@ func (ur *UserRepository) UpdateUser(updatedUser _entity.User) (user _entity.Use
 	return
 }
 
-func (ur *UserRepository) DeleteUser(userId int) (err error) {
+func (ur *UserRepository) DeleteUser(userId uint) (err error) {
 	// prepare statement
 	stmt, err := ur.db.Prepare(`
 		UPDATE users

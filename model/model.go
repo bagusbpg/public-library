@@ -40,3 +40,23 @@ type UpdateUserRequest struct {
 type UpdateUserResponse struct {
 	User _entity.User `json:"user"`
 }
+
+type CreateBookRequest struct {
+	Title       string                `json:"title"`
+	Author      []CreateAuthorRequest `json:"author"`
+	Publisher   string                `json:"publisher"`
+	Language    string                `json:"language"`
+	Pages       uint                  `json:"pages"`
+	Category    string                `json:"category"`
+	ISBN13      string                `json:"isbn13"`
+	Description string                `json:"description"`
+	Quantity    uint                  `json:"quantity"`
+}
+
+type CreateBookResponse struct {
+	Book _entity.Book `json:"book"`
+}
+
+type CreateAuthorRequest struct {
+	Name string `json:"name"`
+}

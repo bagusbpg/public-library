@@ -3,7 +3,7 @@ package entity
 import "time"
 
 type User struct {
-	Id        int       `json:"id"`
+	Id        uint      `json:"id"`
 	Role      string    `json:"role"`
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
@@ -14,47 +14,48 @@ type User struct {
 }
 
 type Book struct {
-	Id          int    `json:"id"`
-	Title       string `json:"title"`
-	Author      []Author
+	Id          uint      `json:"id"`
+	Title       string    `json:"title"`
+	Author      []Author  `json:"author"`
 	Publisher   string    `json:"publisher"`
 	Language    string    `json:"language"`
-	Pages       int       `json:"pages"`
+	Pages       uint      `json:"pages"`
 	Category    string    `json:"category"`
 	ISBN13      string    `json:"isbn13"`
 	Description string    `json:"description"`
+	Quantity    uint      `json:"quantity"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 type BookItem struct {
-	Id     int
+	Id     uint
 	Book   Book
 	Status BookStatus
 }
 
 type Author struct {
-	Id   int
+	Id   uint   `json:"id"`
 	Name string `json:"author"`
 }
 
 type BookStatus struct {
-	Id          int
+	Id          uint
 	Description string
 }
 
 type Review struct {
-	Id        int
+	Id        uint
 	User      User
 	Book      Book
-	Star      int       `json:"star"`
+	Star      uint      `json:"star"`
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type Rent struct {
-	Id          int
+	Id          uint
 	Book        BookItem
 	User        User
 	Description string `json:"description"`
@@ -66,11 +67,11 @@ type Rent struct {
 }
 
 type RentStatus struct {
-	Id          int
+	Id          uint
 	Description string `json:"status"`
 }
 
 type Activity struct {
-	Id          int
+	Id          uint
 	Description string `json:"activity"`
 }

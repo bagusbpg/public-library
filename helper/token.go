@@ -10,7 +10,7 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-func CreateToken(id int, role string) (tokenString string, expire int64, err error) {
+func CreateToken(id uint, role string) (tokenString string, expire int64, err error) {
 	config, err := _config.GetConfig()
 
 	if err != nil {

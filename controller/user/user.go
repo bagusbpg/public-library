@@ -37,18 +37,15 @@ func (uc UserController) SignUp() http.HandlerFunc {
 
 		defer r.Body.Close()
 
-		contentType := r.Header.Get("content-type")
-
-		if contentType != "application/json" {
+		if contentType := r.Header.Get("content-type"); contentType != "application/json" {
 			log.Println("unsupported content type")
 			_model.CreateResponse(rw, http.StatusUnsupportedMediaType, "unsupported content type", nil)
 			return
 		}
 
 		req := _model.SignUpRequest{}
-		err = json.Unmarshal(body, &req)
 
-		if err != nil {
+		if err = json.Unmarshal(body, &req); err != nil {
 			log.Println(err)
 			_model.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
 			return
@@ -83,18 +80,15 @@ func (uc UserController) Login() http.HandlerFunc {
 
 		defer r.Body.Close()
 
-		contentType := r.Header.Get("content-type")
-
-		if contentType != "application/json" {
+		if contentType := r.Header.Get("content-type"); contentType != "application/json" {
 			log.Println("unsupported content type")
 			_model.CreateResponse(rw, http.StatusUnsupportedMediaType, "unsupported content type", nil)
 			return
 		}
 
 		req := _model.LoginRequest{}
-		err = json.Unmarshal(body, &req)
 
-		if err != nil {
+		if err = json.Unmarshal(body, &req); err != nil {
 			log.Println(err)
 			_model.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
 			return
@@ -115,7 +109,7 @@ func (uc UserController) GetUpdateDelete() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		userId, _ := strconv.Atoi(strings.SplitAfter(r.URL.Path, "/")[2])
 
-		existing, code, message := uc.usecase.GetUserById(userId)
+		existing, code, message := uc.usecase.GetUserById(uint(userId))
 
 		if code != http.StatusOK {
 			_model.CreateResponse(rw, code, message, nil)
@@ -137,18 +131,15 @@ func (uc UserController) GetUpdateDelete() http.HandlerFunc {
 
 			defer r.Body.Close()
 
-			contentType := r.Header.Get("content-type")
-
-			if contentType != "application/json" {
+			if contentType := r.Header.Get("content-type"); contentType != "application/json" {
 				log.Println("unsupported content type")
 				_model.CreateResponse(rw, http.StatusUnsupportedMediaType, "unsupported content type", nil)
 				return
 			}
 
 			req := _model.UpdateUserRequest{}
-			err = json.Unmarshal(body, &req)
 
-			if err != nil {
+			if err = json.Unmarshal(body, &req); err != nil {
 				log.Println(err)
 				_model.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
 				return
@@ -163,7 +154,7 @@ func (uc UserController) GetUpdateDelete() http.HandlerFunc {
 
 			_model.CreateResponse(rw, code, message, res)
 		case http.MethodDelete:
-			code, message := uc.usecase.DeleteUser(userId)
+			code, message := uc.usecase.DeleteUser(uint(userId))
 
 			_model.CreateResponse(rw, code, message, nil)
 		default:
