@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	_helper "plain-go/public-library/helper"
 	_model "plain-go/public-library/model"
 	_userUseCase "plain-go/public-library/usecase/user"
 	"strconv"
@@ -20,87 +19,8 @@ func New(user _userUseCase.User) *UserController {
 	return &UserController{usecase: user}
 }
 
-func (uc UserController) SignUpGetAll() http.HandlerFunc {
+func (uc UserController) SignUp() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodPost:
-			body, err := ioutil.ReadAll(r.Body)
-
-			if err != nil {
-				log.Println(err)
-				_model.CreateResponse(rw, http.StatusInternalServerError, "failed to read request body", nil)
-				return
-			}
-
-			defer r.Body.Close()
-
-			if contentType := r.Header.Get("content-type"); contentType != "application/json" {
-				log.Println("unsupported content type")
-				_model.CreateResponse(rw, http.StatusUnsupportedMediaType, "unsupported content type", nil)
-				return
-			}
-
-			req := _model.SignUpRequest{}
-
-			if err = json.Unmarshal(body, &req); err != nil {
-				log.Println(err)
-				_model.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
-				return
-			}
-
-			res, code, message := uc.usecase.SignUp(req)
-
-			if code != http.StatusCreated {
-				_model.CreateResponse(rw, code, message, nil)
-				return
-			}
-
-			_model.CreateResponse(rw, code, message, res)
-		case http.MethodGet:
-			token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
-
-			if token == "" {
-				log.Println("missing or malformed jwt")
-				_model.CreateResponse(rw, http.StatusBadRequest, "missing or malformed jwt", nil)
-				return
-			}
-
-			_, role, err := _helper.ExtractToken(token)
-
-			if err != nil {
-				_model.CreateResponse(rw, http.StatusUnauthorized, err.Error(), nil)
-				return
-			}
-
-			if role != "Administrator" {
-				log.Println("forbidden")
-				_model.CreateResponse(rw, http.StatusForbidden, "forbidden", nil)
-				return
-			}
-
-			res, code, message := uc.usecase.GetAllUsers()
-
-			if code != http.StatusOK {
-				_model.CreateResponse(rw, code, message, nil)
-				return
-			}
-
-			_model.CreateResponse(rw, code, message, res)
-		default:
-			log.Println("method not allowed")
-			_model.CreateResponse(rw, http.StatusMethodNotAllowed, "method not allowed", nil)
-		}
-	}
-}
-
-func (uc UserController) Login() http.HandlerFunc {
-	return func(rw http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			log.Println("method not allowed")
-			_model.CreateResponse(rw, http.StatusMethodNotAllowed, "method not allowed", nil)
-			return
-		}
-
 		body, err := ioutil.ReadAll(r.Body)
 
 		if err != nil {
@@ -111,11 +31,49 @@ func (uc UserController) Login() http.HandlerFunc {
 
 		defer r.Body.Close()
 
-		if contentType := r.Header.Get("content-type"); contentType != "application/json" {
-			log.Println("unsupported content type")
-			_model.CreateResponse(rw, http.StatusUnsupportedMediaType, "unsupported content type", nil)
+		req := _model.SignUpRequest{}
+
+		if err = json.Unmarshal(body, &req); err != nil {
+			log.Println(err)
+			_model.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
 			return
 		}
+
+		res, code, message := uc.usecase.SignUp(req)
+
+		if code != http.StatusCreated {
+			_model.CreateResponse(rw, code, message, nil)
+			return
+		}
+
+		_model.CreateResponse(rw, code, message, res)
+	}
+}
+
+func (uc UserController) GetAll() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		res, code, message := uc.usecase.GetAllUsers()
+
+		if code != http.StatusOK {
+			_model.CreateResponse(rw, code, message, nil)
+			return
+		}
+
+		_model.CreateResponse(rw, code, message, res)
+	}
+}
+
+func (uc UserController) Login() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		body, err := ioutil.ReadAll(r.Body)
+
+		if err != nil {
+			log.Println(err)
+			_model.CreateResponse(rw, http.StatusInternalServerError, "failed to read request body", nil)
+			return
+		}
+
+		defer r.Body.Close()
 
 		req := _model.LoginRequest{}
 
@@ -136,36 +94,28 @@ func (uc UserController) Login() http.HandlerFunc {
 	}
 }
 
-func (uc UserController) GetUpdateDelete() http.HandlerFunc {
+func (uc UserController) Get() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
+		str := strings.SplitAfter(r.URL.Path, "/")
+		userId, _ := strconv.Atoi(str[len(str)-1])
 
-		if token == "" {
-			log.Println("missing or malformed jwt")
-			_model.CreateResponse(rw, http.StatusBadRequest, "missing or malformed jwt", nil)
+		res, code, message := uc.usecase.GetUserById(uint(userId))
+
+		if code != http.StatusOK {
+			_model.CreateResponse(rw, code, message, nil)
 			return
 		}
 
-		loginId, role, err := _helper.ExtractToken(token)
+		res.User.Password = ""
 
-		if err != nil {
-			_model.CreateResponse(rw, http.StatusUnauthorized, err.Error(), nil)
-			return
-		}
+		_model.CreateResponse(rw, code, message, res.User)
+	}
+}
 
-		userId, err := strconv.Atoi(strings.SplitAfter(r.URL.Path, "/")[2])
-
-		if err != nil {
-			log.Println(err)
-			_model.CreateResponse(rw, http.StatusBadRequest, "invalid id", nil)
-			return
-		}
-
-		if loginId != userId && role != "Administrator" {
-			log.Println("forbidden")
-			_model.CreateResponse(rw, http.StatusForbidden, "forbidden", nil)
-			return
-		}
+func (uc UserController) Update() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		str := strings.SplitAfter(r.URL.Path, "/")
+		userId, _ := strconv.Atoi(str[len(str)-1])
 
 		existing, code, message := uc.usecase.GetUserById(uint(userId))
 
@@ -174,50 +124,49 @@ func (uc UserController) GetUpdateDelete() http.HandlerFunc {
 			return
 		}
 
-		switch r.Method {
-		case http.MethodGet:
-			existing.User.Password = ""
-			_model.CreateResponse(rw, code, message, existing.User)
-		case http.MethodPut:
-			body, err := ioutil.ReadAll(r.Body)
+		body, err := ioutil.ReadAll(r.Body)
 
-			if err != nil {
-				log.Println(err)
-				_model.CreateResponse(rw, http.StatusInternalServerError, "failed to read request body", nil)
-				return
-			}
-
-			defer r.Body.Close()
-
-			if contentType := r.Header.Get("content-type"); contentType != "application/json" {
-				log.Println("unsupported content type")
-				_model.CreateResponse(rw, http.StatusUnsupportedMediaType, "unsupported content type", nil)
-				return
-			}
-
-			req := _model.UpdateUserRequest{}
-
-			if err = json.Unmarshal(body, &req); err != nil {
-				log.Println(err)
-				_model.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
-				return
-			}
-
-			res, code, message := uc.usecase.UpdateUser(req, existing.User)
-
-			if code != http.StatusOK {
-				_model.CreateResponse(rw, code, message, nil)
-				return
-			}
-
-			_model.CreateResponse(rw, code, message, res)
-		case http.MethodDelete:
-			code, message := uc.usecase.DeleteUser(uint(userId))
-
-			_model.CreateResponse(rw, code, message, nil)
-		default:
-			log.Println("method not allowed")
-			_model.CreateResponse(rw, http.StatusMethodNotAllowed, "method not allowed", nil)
+		if err != nil {
+			log.Println(err)
+			_model.CreateResponse(rw, http.StatusInternalServerError, "failed to read request body", nil)
+			return
 		}
+
+		defer r.Body.Close()
+
+		req := _model.UpdateUserRequest{}
+
+		if err = json.Unmarshal(body, &req); err != nil {
+			log.Println(err)
+			_model.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
+			return
+		}
+
+		res, code, message := uc.usecase.UpdateUser(req, existing.User)
+
+		if code != http.StatusOK {
+			_model.CreateResponse(rw, code, message, nil)
+			return
+		}
+
+		_model.CreateResponse(rw, code, message, res)
+	}
+}
+
+func (uc UserController) Delete() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		str := strings.SplitAfter(r.URL.Path, "/")
+		userId, _ := strconv.Atoi(str[len(str)-1])
+
+		_, code, message := uc.usecase.GetUserById(uint(userId))
+
+		if code != http.StatusOK {
+			_model.CreateResponse(rw, code, message, nil)
+			return
+		}
+
+		code, message = uc.usecase.DeleteUser(uint(userId))
+
+		_model.CreateResponse(rw, code, message, nil)
 	}
 }
