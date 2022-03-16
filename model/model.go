@@ -73,3 +73,18 @@ type GetAllBooksResponse struct {
 type GetBookByIdResponse struct {
 	Book _entity.Book `json:"book"`
 }
+
+type UpdateBookRequest struct {
+	Title       string                `json:"title"`
+	Author      []CreateAuthorRequest `json:"author"`
+	Publisher   string                `json:"publisher"`
+	Language    string                `json:"language"`
+	Pages       uint                  `json:"pages"`
+	Category    string                `json:"category"`
+	ISBN13      string                `json:"isbn13"`
+	Description string                `json:"description"`
+}
+
+type UpdateBookResponse struct {
+	Book _entity.Book `json:"book"`
+}

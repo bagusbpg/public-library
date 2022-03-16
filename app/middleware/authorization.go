@@ -26,7 +26,8 @@ func MemberOnlydAuthorization(handler http.Handler) http.Handler {
 			return
 		}
 
-		userId, _ := strconv.Atoi(strings.SplitAfter(r.URL.Path, "/")[2])
+		str := strings.SplitAfter(r.URL.Path, "/")
+		userId, _ := strconv.Atoi(str[len(str)-1])
 
 		if loginId != userId {
 			log.Println("forbidden")
@@ -38,7 +39,7 @@ func MemberOnlydAuthorization(handler http.Handler) http.Handler {
 	})
 }
 
-func MemberAndAdminAuthorization(handler http.Handler) http.Handler {
+func MemberAndLibrarianAuthorization(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
 
@@ -55,9 +56,10 @@ func MemberAndAdminAuthorization(handler http.Handler) http.Handler {
 			return
 		}
 
-		userId, _ := strconv.Atoi(strings.SplitAfter(r.URL.Path, "/")[2])
+		str := strings.SplitAfter(r.URL.Path, "/")
+		userId, _ := strconv.Atoi(str[len(str)-1])
 
-		if loginId != userId && role != "Administrator" {
+		if loginId != userId && role != "Librarian" {
 			log.Println("forbidden")
 			_model.CreateResponse(rw, http.StatusForbidden, "forbidden", nil)
 			return
@@ -67,7 +69,7 @@ func MemberAndAdminAuthorization(handler http.Handler) http.Handler {
 	})
 }
 
-func AdminAuthorization(handler http.Handler) http.Handler {
+func LibrarianAuthorization(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
 
@@ -84,7 +86,7 @@ func AdminAuthorization(handler http.Handler) http.Handler {
 			return
 		}
 
-		if role != "Administrator" {
+		if role != "Librarian" {
 			log.Println("forbidden")
 			_model.CreateResponse(rw, http.StatusForbidden, "forbidden", nil)
 			return

@@ -36,7 +36,7 @@ type BookItem struct {
 
 type Author struct {
 	Id   uint   `json:"id"`
-	Name string `json:"author"`
+	Name string `json:"name"`
 }
 
 type BookStatus struct {

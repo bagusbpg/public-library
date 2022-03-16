@@ -244,7 +244,7 @@ func (uuc UserUseCase) UpdateUser(req _model.UpdateUserRequest, user _entity.Use
 	flag := true
 
 	for _, s := range check {
-		// check if there is any forbidden character in required field
+		// check if there is any forbidden character
 		if strings.Contains(strings.ReplaceAll(s, " ", ""), ";--") {
 			log.Println("forbidden character")
 			code, message = http.StatusBadRequest, "forbidden chacarter"

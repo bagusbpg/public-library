@@ -20,7 +20,8 @@ func Router(
 
 	mux.Handle("/login", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.POST, _mw.JSONRequest).Then(user.Login()))
 
-	mux.Handle("/member/profiles/", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.PUT, _mw.JSONRequest, _mw.MemberAndAdminAuthorization, _mw.ValidateId).Then(user.Update()))
+	mux.Handle("/member/profiles", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.GET, _mw.MemberAndLibrarianAuthorization).Then(user.Get()))
+	mux.Handle("/member/profiles/", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.PUT, _mw.JSONRequest, _mw.ValidateId, _mw.MemberOnlydAuthorization).Then(user.Update()))
 	// GET		member/requests -> get all my request (based on token); use query params to see history of past requests
 	// GET		member/requests/ -> get my specific request by request id (verified by token)
 	// POST		member/reviews -> create reviews (verified by token)
@@ -29,16 +30,16 @@ func Router(
 	// GET		member/favorites/1 -> get all my favorite books by user id
 	// POST		member/wishlist -> create wishlist
 	// GET		member/wishlist/1 -> get all my wishlist by user id
+	mux.Handle("/member/delete/profiles/", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.DELETE, _mw.ValidateId, _mw.MemberAndLibrarianAuthorization).Then(user.Delete()))
+	// OK DELETE	member/delete/profiles/1 -> delete profile by user id (verified by token)
 	// DELETE	member/delete/requests/1 -> cancel borrow request by request id (verified by token)
 	// DELETE	member/delete/reviews/1 -> delete my review based on review id (verified by token)
 	// DELETE	member/delete/favorites/1 -> delete my favorite based on book id (verified by token)
 
-	mux.Handle("/librarian/books", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.POST, _mw.JSONRequest, _mw.AdminAuthorization).Then(book.Create()))
+	mux.Handle("/librarian/books", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.POST, _mw.JSONRequest, _mw.LibrarianAuthorization).Then(book.Create()))
 	// mux.Handle("/librarian/books/", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.PUT, _mw.JSONRequest, _mw.Authentication, _mw.AdminAuthorization).Then(book.Update()))
-	mux.Handle("/librarian/users", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.GET, _mw.AdminAuthorization).Then(user.GetAll()))
-	mux.Handle("/librarian/users/", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.DELETE, _mw.AdminAuthorization, _mw.ValidateId).Then(user.Delete()))
+	mux.Handle("/librarian/users", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.GET, _mw.LibrarianAuthorization).Then(user.GetAll()))
 	// GET		librarian/requests -> get all requests
 	// GET		librarian/requests/1 -> get request of specific user
 	// GET		librarian/requests/1/1 -> get specific request of specific user
-	// DELETE	librarian/reviews/1 -> delete review by review id
 }

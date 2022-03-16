@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	_bookRepository "plain-go/public-library/datastore/book"
+	_entity "plain-go/public-library/entity"
 	_helper "plain-go/public-library/helper"
 	_model "plain-go/public-library/model"
 	"strings"
@@ -188,9 +189,19 @@ func (buc BookUseCase) GetAllBooks() (res _model.GetAllBooksResponse, code int, 
 		}
 
 		book.Author = authors
+
+		quantity, err := buc.repository.CountBookById(book.Id)
+
+		if err != nil {
+			code, message = http.StatusInternalServerError, "internal server error"
+			return
+		}
+
+		book.Quantity = quantity
+
+		res.Books = append(res.Books, book)
 	}
 
-	res.Books = books
 	res.Count = uint(len(books))
 	code, message = http.StatusOK, "success get all books"
 
@@ -225,10 +236,125 @@ func (buc BookUseCase) GetBookById(bookId uint) (res _model.GetBookByIdResponse,
 		return
 	}
 
+	// get book author
+	res.Book.Author, err = buc.repository.GetBookAuthors(bookId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
 	// formatting response
 	res.Book.CreatedAt, _ = _helper.TimeFormatter(res.Book.CreatedAt)
 	res.Book.UpdatedAt, _ = _helper.TimeFormatter(res.Book.UpdatedAt)
 	code, message = http.StatusOK, "success get book"
+
+	return
+}
+
+func (buc BookUseCase) UpdateBook(req _model.UpdateBookRequest, book _entity.Book) (res _model.UpdateBookResponse, code int, message string) {
+	// prepare input string
+	title := strings.Title(strings.TrimSpace(req.Title))
+	publisher := strings.TrimSpace(req.Publisher)
+	language := strings.TrimSpace(req.Language)
+	category := strings.TrimSpace(req.Category)
+	isbn13 := strings.TrimSpace(req.ISBN13)
+	description := strings.TrimSpace(req.Description)
+
+	check := []string{title, publisher, language, category, isbn13, description}
+	flag := true
+
+	for _, s := range check {
+		// check if there is any forbidden character
+		if strings.Contains(strings.ReplaceAll(s, " ", ""), ";--") {
+			log.Println("forbidden character")
+			code, message = http.StatusBadRequest, "forbidden chacarter"
+			return
+		}
+
+		// check if any field is updated
+		if s != "" {
+			flag = false
+		}
+	}
+
+	if title != "" {
+		book.Title = title
+	}
+
+	if publisher != "" {
+		book.Publisher = publisher
+	}
+
+	if language != "" {
+		book.Language = language
+	}
+
+	if category != "" {
+		book.Category = category
+	}
+
+	if isbn13 != "" {
+		book.ISBN13 = isbn13
+	}
+
+	if description != "" {
+		book.Description = description
+	}
+
+	// if authors are updated, clear existing ones first
+	if len(req.Author) > 0 {
+		book.Author = []_entity.Author{}
+	}
+
+	for _, _author := range req.Author {
+		author := _entity.Author{}
+		author.Name = strings.TrimSpace(_author.Name)
+
+		// check if there is any forbidden character in required field
+		if strings.Contains(strings.ReplaceAll(_author.Name, " ", ""), ";--") {
+			log.Println("forbidden character")
+			code, message = http.StatusBadRequest, "forbidden character"
+			return
+		}
+
+		book.Author = append(book.Author, author)
+		flag = false
+	}
+
+	// check if pages invalid
+	if req.Pages < 0 {
+		log.Println("invalid number of pages")
+		code, message = http.StatusBadRequest, "invalid number of pages"
+		return
+	} else if req.Pages > 0 {
+		book.Pages = req.Pages
+		flag = false
+	}
+
+	// check if no field is updated
+	if flag {
+		log.Println("no update was performed")
+		code, message = http.StatusBadRequest, "no update was performed"
+		return
+	}
+
+	// calling repository
+	book.UpdatedAt = time.Now()
+	_book, err := buc.repository.UpdateBook(book)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// formatting response
+	res.Book = _book
+	res.Book.Id = book.Id
+	res.Book.UpdatedAt, _ = _helper.TimeFormatter(res.Book.UpdatedAt)
+	code, message = http.StatusOK, "success update book"
 
 	return
 }
