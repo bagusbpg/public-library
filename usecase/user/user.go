@@ -184,6 +184,28 @@ func (uuc UserUseCase) Login(req _model.LoginRequest) (res _model.LoginResponse,
 	return
 }
 
+func (uuc UserUseCase) GetAllUsers() (res _model.GetAllUsersResponse, code int, message string) {
+	// calling repository
+	users, err := uuc.repository.GetAllUsers()
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	for _, user := range users {
+		// formatting response
+		user.CreatedAt, _ = _helper.TimeFormatter(user.CreatedAt)
+		user.UpdatedAt, _ = _helper.TimeFormatter(user.UpdatedAt)
+		res.Users = append(res.Users, user)
+	}
+
+	code, message = http.StatusOK, "success get all users"
+
+	return
+}
+
 func (uuc UserUseCase) GetUserById(userId uint) (res _model.GetUserByIdResponse, code int, message string) {
 	// calling repository
 	user, err := uuc.repository.GetUserById(userId)

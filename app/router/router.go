@@ -13,8 +13,8 @@ func Router(
 	book *_book.BookController,
 ) {
 	mux.Handle("/login", (_mw.New(_mw.JSONResponse, _mw.Logger).Then(user.Login())))
-	mux.Handle("/users", (_mw.New(_mw.JSONResponse, _mw.Logger).Then(user.SignUp())))
-	mux.Handle("/users/", (_mw.New(_mw.JSONResponse, _mw.Logger, _mw.Authentication, _mw.ValidateId, _mw.Authorization).Then(user.GetUpdateDelete())))
+	mux.Handle("/users", (_mw.New(_mw.JSONResponse, _mw.Logger).Then(user.SignUpGetAll())))
+	mux.Handle("/users/", (_mw.New(_mw.JSONResponse, _mw.Logger).Then(user.GetUpdateDelete())))
 	mux.Handle("/books", (_mw.New(_mw.JSONResponse, _mw.Logger).Then(book.CreateGetAll())))
 	mux.Handle("/books/", (_mw.New(_mw.JSONResponse, _mw.Logger).Then(book.GetUpdateDelete())))
 }

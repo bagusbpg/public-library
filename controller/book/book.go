@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	_helper "plain-go/public-library/helper"
 	_model "plain-go/public-library/model"
 	_bookUseCase "plain-go/public-library/usecase/book"
 	"strconv"
@@ -32,6 +33,27 @@ func (bc BookController) CreateGetAll() http.HandlerFunc {
 
 			_model.CreateResponse(rw, code, message, res)
 		case http.MethodPost:
+			token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
+
+			if token == "" {
+				log.Println("missing or malformed jwt")
+				_model.CreateResponse(rw, http.StatusBadRequest, "missing or malformed jwt", nil)
+				return
+			}
+
+			_, role, err := _helper.ExtractToken(token)
+
+			if err != nil {
+				_model.CreateResponse(rw, http.StatusUnauthorized, err.Error(), nil)
+				return
+			}
+
+			if role != "Administrator" {
+				log.Println("forbidden")
+				_model.CreateResponse(rw, http.StatusForbidden, "forbidden", nil)
+				return
+			}
+
 			body, err := ioutil.ReadAll(r.Body)
 
 			if err != nil {

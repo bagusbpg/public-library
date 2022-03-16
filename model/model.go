@@ -26,6 +26,10 @@ type SignUpResponse struct {
 	User _entity.User `json:"user"`
 }
 
+type GetAllUsersResponse struct {
+	Users []_entity.User `json:"users"`
+}
+
 type GetUserByIdResponse struct {
 	User _entity.User `json:"user"`
 }

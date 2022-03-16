@@ -88,6 +88,45 @@ func (ur *UserRepository) CreateNewUser(newUser _entity.User) (user _entity.User
 	return
 }
 
+func (ur *UserRepository) GetAllUsers() (users []_entity.User, err error) {
+	// prepare statement
+	stmt, err := ur.db.Prepare(`
+		SELECT id, role, name, email, phone, password, created_at, updated_at
+		FROM users
+		WHERE deleted_at IS NULL
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query()
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	for row.Next() {
+		user := _entity.User{}
+
+		if err = row.Scan(&user.Id, &user.Role, &user.Name, &user.Email, &user.Phone, &user.Password, &user.CreatedAt, &user.UpdatedAt); err != nil {
+			log.Println(err)
+			return
+		}
+
+		users = append(users, user)
+	}
+
+	return
+}
+
 func (ur *UserRepository) GetUserById(userId uint) (user _entity.User, err error) {
 	// prepare statement
 	stmt, err := ur.db.Prepare(`

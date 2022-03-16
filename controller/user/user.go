@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	_helper "plain-go/public-library/helper"
 	_model "plain-go/public-library/model"
 	_userUseCase "plain-go/public-library/usecase/user"
 	"strconv"
@@ -19,46 +20,76 @@ func New(user _userUseCase.User) *UserController {
 	return &UserController{usecase: user}
 }
 
-func (uc UserController) SignUp() http.HandlerFunc {
+func (uc UserController) SignUpGetAll() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
+		switch r.Method {
+		case http.MethodPost:
+			body, err := ioutil.ReadAll(r.Body)
+
+			if err != nil {
+				log.Println(err)
+				_model.CreateResponse(rw, http.StatusInternalServerError, "failed to read request body", nil)
+				return
+			}
+
+			defer r.Body.Close()
+
+			if contentType := r.Header.Get("content-type"); contentType != "application/json" {
+				log.Println("unsupported content type")
+				_model.CreateResponse(rw, http.StatusUnsupportedMediaType, "unsupported content type", nil)
+				return
+			}
+
+			req := _model.SignUpRequest{}
+
+			if err = json.Unmarshal(body, &req); err != nil {
+				log.Println(err)
+				_model.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
+				return
+			}
+
+			res, code, message := uc.usecase.SignUp(req)
+
+			if code != http.StatusCreated {
+				_model.CreateResponse(rw, code, message, nil)
+				return
+			}
+
+			_model.CreateResponse(rw, code, message, res)
+		case http.MethodGet:
+			token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
+
+			if token == "" {
+				log.Println("missing or malformed jwt")
+				_model.CreateResponse(rw, http.StatusBadRequest, "missing or malformed jwt", nil)
+				return
+			}
+
+			_, role, err := _helper.ExtractToken(token)
+
+			if err != nil {
+				_model.CreateResponse(rw, http.StatusUnauthorized, err.Error(), nil)
+				return
+			}
+
+			if role != "Administrator" {
+				log.Println("forbidden")
+				_model.CreateResponse(rw, http.StatusForbidden, "forbidden", nil)
+				return
+			}
+
+			res, code, message := uc.usecase.GetAllUsers()
+
+			if code != http.StatusOK {
+				_model.CreateResponse(rw, code, message, nil)
+				return
+			}
+
+			_model.CreateResponse(rw, code, message, res)
+		default:
 			log.Println("method not allowed")
 			_model.CreateResponse(rw, http.StatusMethodNotAllowed, "method not allowed", nil)
-			return
 		}
-
-		body, err := ioutil.ReadAll(r.Body)
-
-		if err != nil {
-			log.Println(err)
-			_model.CreateResponse(rw, http.StatusInternalServerError, "failed to read request body", nil)
-			return
-		}
-
-		defer r.Body.Close()
-
-		if contentType := r.Header.Get("content-type"); contentType != "application/json" {
-			log.Println("unsupported content type")
-			_model.CreateResponse(rw, http.StatusUnsupportedMediaType, "unsupported content type", nil)
-			return
-		}
-
-		req := _model.SignUpRequest{}
-
-		if err = json.Unmarshal(body, &req); err != nil {
-			log.Println(err)
-			_model.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
-			return
-		}
-
-		res, code, message := uc.usecase.SignUp(req)
-
-		if code != http.StatusCreated {
-			_model.CreateResponse(rw, code, message, nil)
-			return
-		}
-
-		_model.CreateResponse(rw, code, message, res)
 	}
 }
 
@@ -107,7 +138,34 @@ func (uc UserController) Login() http.HandlerFunc {
 
 func (uc UserController) GetUpdateDelete() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		userId, _ := strconv.Atoi(strings.SplitAfter(r.URL.Path, "/")[2])
+		token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
+
+		if token == "" {
+			log.Println("missing or malformed jwt")
+			_model.CreateResponse(rw, http.StatusBadRequest, "missing or malformed jwt", nil)
+			return
+		}
+
+		loginId, role, err := _helper.ExtractToken(token)
+
+		if err != nil {
+			_model.CreateResponse(rw, http.StatusUnauthorized, err.Error(), nil)
+			return
+		}
+
+		userId, err := strconv.Atoi(strings.SplitAfter(r.URL.Path, "/")[2])
+
+		if err != nil {
+			log.Println(err)
+			_model.CreateResponse(rw, http.StatusBadRequest, "invalid id", nil)
+			return
+		}
+
+		if loginId != userId && role != "Administrator" {
+			log.Println("forbidden")
+			_model.CreateResponse(rw, http.StatusForbidden, "forbidden", nil)
+			return
+		}
 
 		existing, code, message := uc.usecase.GetUserById(uint(userId))
 

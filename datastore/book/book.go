@@ -395,3 +395,31 @@ func (br *BookRepository) CountBookById(bookId uint) (count uint, err error) {
 
 	return
 }
+
+func (br *BookRepository) UpdateBook(updatedBook _entity.Book) (book _entity.Book, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		UPDATE books
+		SET title = ?, publisher = ?, language = ?, pages = ?, category = ?, isbn13 = ?, description = ?, updated_at = ?
+		WHERE id = ?
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	_, err = stmt.Exec(updatedBook.Title, updatedBook.Publisher, updatedBook.Language, updatedBook.Pages, updatedBook.Category, updatedBook.ISBN13, updatedBook.Description, updatedBook.UpdatedAt, updatedBook.Id)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	book = updatedBook
+
+	return
+}
