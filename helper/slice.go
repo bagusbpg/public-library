@@ -5,19 +5,16 @@ import (
 )
 
 func RemoveAuthor(authors []_entity.Author, item _entity.Author) []_entity.Author {
-	i, flag := 0, true
-
-	for i = 0; i < len(authors) && flag; i++ {
-		if authors[i] == item {
-			flag = false
+	for i := 0; i < len(authors)-1; i++ {
+		if authors[i].Name == item.Name {
+			authors = append(authors[:i], authors[i+1:]...)
+			break
 		}
 	}
 
-	if flag {
-		return authors
-	} else if i == len(authors)-1 {
-		return authors[:i]
+	if authors[len(authors)-1] == item {
+		return authors[:(len(authors) - 2)]
 	}
 
-	return append(authors[:i], authors[i+1:]...)
+	return authors
 }

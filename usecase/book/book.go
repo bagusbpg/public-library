@@ -272,35 +272,36 @@ func (buc BookUseCase) UpdateBook(req _model.UpdateBookRequest, book _entity.Boo
 			code, message = http.StatusBadRequest, "forbidden chacarter"
 			return
 		}
-
-		// check if any field is updated
-		if s != "" {
-			flag = false
-		}
 	}
 
-	if title != "" {
+	if title != "" && title != book.Title {
 		book.Title = title
+		flag = false
 	}
 
-	if publisher != "" {
+	if publisher != "" && publisher != book.Publisher {
 		book.Publisher = publisher
+		flag = false
 	}
 
-	if language != "" {
+	if language != "" && language != book.Language {
 		book.Language = language
+		flag = false
 	}
 
-	if category != "" {
+	if category != "" && category != book.Category {
 		book.Category = category
+		flag = false
 	}
 
-	if isbn13 != "" {
+	if isbn13 != "" && isbn13 != book.ISBN13 {
 		book.ISBN13 = isbn13
+		flag = false
 	}
 
-	if description != "" {
+	if description != "" && description != book.Description {
 		book.Description = description
+		flag = false
 	}
 
 	// if authors are updated
@@ -325,7 +326,6 @@ func (buc BookUseCase) UpdateBook(req _model.UpdateBookRequest, book _entity.Boo
 		}
 
 		updatedAuthors[author.Name] = nil
-		flag = false
 	}
 
 	createdAuthors := []_entity.Author{}
@@ -341,6 +341,22 @@ func (buc BookUseCase) UpdateBook(req _model.UpdateBookRequest, book _entity.Boo
 		if _, exist := updatedAuthors[name]; !exist {
 			droppedAuthors = append(droppedAuthors, _entity.Author{Name: name})
 		}
+	}
+
+	if len(createdAuthors) != 0 || len(droppedAuthors) != 0 {
+		flag = false
+	}
+
+	if req.Pages > 0 && req.Pages != book.Pages {
+		book.Pages = req.Pages
+		flag = false
+	}
+
+	// check if no field is updated
+	if flag {
+		log.Println("no update was performed")
+		code, message = http.StatusBadRequest, "no update was performed"
+		return
 	}
 
 	// create author if len(createdAuthors) > 0
@@ -379,24 +395,14 @@ func (buc BookUseCase) UpdateBook(req _model.UpdateBookRequest, book _entity.Boo
 
 	// drop author if len(droppedAuthors) > 0
 	for _, _author := range droppedAuthors {
+		_author, _ = buc.repository.GetAuthorByName(_author.Name)
+
 		if err := buc.repository.DeleteBookAuthorJunction(book, _author); err != nil {
 			code, message = http.StatusInternalServerError, "internal server error"
 			return
 		}
 
 		book.Author = _helper.RemoveAuthor(book.Author, _author)
-	}
-
-	if req.Pages > 0 {
-		book.Pages = req.Pages
-		flag = false
-	}
-
-	// check if no field is updated
-	if flag {
-		log.Println("no update was performed")
-		code, message = http.StatusBadRequest, "no update was performed"
-		return
 	}
 
 	// calling repository

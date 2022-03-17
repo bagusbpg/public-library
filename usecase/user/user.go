@@ -159,7 +159,7 @@ func (uuc UserUseCase) Login(req _model.LoginRequest) (res _model.LoginResponse,
 
 	// check if password matches
 	if err := bcrypt.CompareHashAndPassword([]byte(res.User.Password), []byte(password)); err != nil {
-		log.Println(err)
+		log.Println(res.User.Password, password, err)
 		code, message = http.StatusUnauthorized, "password mismatch"
 		return
 	}
@@ -250,25 +250,14 @@ func (uuc UserUseCase) UpdateUser(req _model.UpdateUserRequest, user _entity.Use
 			code, message = http.StatusBadRequest, "forbidden chacarter"
 			return
 		}
-
-		// check if any field is updated
-		if s != "" {
-			flag = false
-		}
 	}
 
-	// check if no field is updated
-	if flag {
-		log.Println("no update was performed")
-		code, message = http.StatusBadRequest, "no update was performed"
-		return
-	}
-
-	if name != "" {
+	if name != "" && name != user.Name {
 		user.Name = name
+		flag = false
 	}
 
-	if email != "" {
+	if email != "" && email != user.Email {
 		// check if email pattern invalid
 		if err := _helper.CheckEmailPattern(email); err != nil {
 			code, message = http.StatusBadRequest, err.Error()
@@ -276,9 +265,10 @@ func (uuc UserUseCase) UpdateUser(req _model.UpdateUserRequest, user _entity.Use
 		}
 
 		user.Email = email
+		flag = false
 	}
 
-	if phone != "" {
+	if phone != "" && phone != user.Phone {
 		// check if phone pattern invalid
 		if err := _helper.CheckPhonePattern(phone); err != nil {
 			code, message = http.StatusBadRequest, err.Error()
@@ -286,6 +276,7 @@ func (uuc UserUseCase) UpdateUser(req _model.UpdateUserRequest, user _entity.Use
 		}
 
 		user.Phone = phone
+		flag = false
 	}
 
 	if password != "" {
@@ -295,17 +286,27 @@ func (uuc UserUseCase) UpdateUser(req _model.UpdateUserRequest, user _entity.Use
 			return
 		}
 
-		// hashing password before storing in database
-		hashedPassword, errhash := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+			// hashing password before storing in database
+			hashedPassword, errhash := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 
-		// detect failure in hashing password
-		if errhash != nil {
-			log.Println(errhash)
-			code, message = http.StatusInternalServerError, "failed to hash password"
-			return
+			// detect failure in hashing password
+			if errhash != nil {
+				log.Println(errhash)
+				code, message = http.StatusInternalServerError, "failed to hash password"
+				return
+			}
+
+			user.Password = string(hashedPassword)
+			flag = false
 		}
+	}
 
-		user.Password = string(hashedPassword)
+	// check if no field is updated
+	if flag {
+		log.Println("no update was performed")
+		code, message = http.StatusBadRequest, "no update was performed"
+		return
 	}
 
 	// calling respository
