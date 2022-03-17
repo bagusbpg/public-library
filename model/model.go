@@ -88,3 +88,7 @@ type UpdateBookRequest struct {
 type UpdateBookResponse struct {
 	Book _entity.Book `json:"book"`
 }
+
+type GetAllFavoritesResponse struct {
+	Favorites []_entity.Favorite `json:"favorites"`
+}

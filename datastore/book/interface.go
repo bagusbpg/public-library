@@ -19,4 +19,5 @@ type Book interface {
 	UpdateBook(updatedBook _entity.Book) (book _entity.Book, err error)
 	DeleteBookAuthorJunction(book _entity.Book, author _entity.Author) (err error)
 	// DeleteBook(bookId int) (err error)
+	GetAllFavorites(userId uint) (favorites []_entity.Favorite, err error)
 }

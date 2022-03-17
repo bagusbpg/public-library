@@ -4,6 +4,7 @@ import (
 	"net/http"
 	_mw "plain-go/public-library/app/middleware"
 	_book "plain-go/public-library/controller/book"
+	_favorite "plain-go/public-library/controller/favorite"
 	_user "plain-go/public-library/controller/user"
 )
 
@@ -11,6 +12,7 @@ func Router(
 	mux *http.ServeMux,
 	user *_user.UserController,
 	book *_book.BookController,
+	favorite *_favorite.FavoriteController,
 ) {
 	mux.Handle("/public/signup", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.POST, _mw.JSONRequest).Then(user.SignUp()))
 	// mux.Handle("/public/stats", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.GET).Then(book.Stats()))
@@ -27,7 +29,8 @@ func Router(
 	// POST		member/reviews -> create reviews (verified by token)
 	// PUT 		member/reviews/1 -> update review by review id (verified by token)
 	// POST		member/favorites -> create favorite book (based on token)
-	// GET		member/favorites/1 -> get all my favorite books by user id
+	mux.Handle("/member/favorites/", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.GET, _mw.ValidateId, _mw.MemberAndLibrarianAuthorization).Then(favorite.GetAllFavorites()))
+	// OK GET	member/favorites/1 -> get all my favorite books by user id
 	// POST		member/wishlist -> create wishlist
 	// GET		member/wishlist/1 -> get all my wishlist by user id
 	mux.Handle("/member/delete/profiles/", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.DELETE, _mw.ValidateId, _mw.MemberAndLibrarianAuthorization).Then(user.Delete()))

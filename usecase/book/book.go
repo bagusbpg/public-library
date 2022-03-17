@@ -423,3 +423,42 @@ func (buc BookUseCase) UpdateBook(req _model.UpdateBookRequest, book _entity.Boo
 
 	return
 }
+
+func (buc BookUseCase) GetAllFavorites(userId uint) (res _model.GetAllFavoritesResponse, code int, message string) {
+	// calling repository
+	favs, err := buc.repository.GetAllFavorites(userId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	res.Favorites = favs
+
+	for _, fav := range res.Favorites {
+		// getting each book
+		fav.Book, err = buc.repository.GetBookById(fav.Book.Id)
+
+		// detect failure in repository
+		if err != nil {
+			code, message = http.StatusInternalServerError, "internal server error"
+			return
+		}
+
+		// getting each book's authors
+		fav.Book.Author, err = buc.repository.GetBookAuthors(fav.Book.Id)
+
+		// detect failure in repository
+		if err != nil {
+			code, message = http.StatusInternalServerError, "internal server error"
+			return
+		}
+
+		fav.CreatedAt, _ = _helper.TimeFormatter(fav.CreatedAt)
+	}
+
+	code, message = http.StatusOK, "success get all favorites"
+
+	return
+}

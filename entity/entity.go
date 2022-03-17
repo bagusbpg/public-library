@@ -75,3 +75,9 @@ type Activity struct {
 	Id          uint
 	Description string `json:"activity"`
 }
+
+type Favorite struct {
+	Id        uint      `json:"id"`
+	Book      Book      `json:"book"`
+	CreatedAt time.Time `json:"created_at"`
+}
