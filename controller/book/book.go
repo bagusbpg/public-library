@@ -78,3 +78,44 @@ func (bc BookController) Get() http.HandlerFunc {
 		_model.CreateResponse(rw, code, message, existing.Book)
 	}
 }
+
+func (bc BookController) Update() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		str := strings.SplitAfter(r.URL.Path, "/")
+		bookId, _ := strconv.Atoi(str[len(str)-1])
+
+		existing, code, message := bc.usecase.GetBookById(uint(bookId))
+
+		if code != http.StatusOK {
+			_model.CreateResponse(rw, code, message, nil)
+			return
+		}
+
+		body, err := ioutil.ReadAll(r.Body)
+
+		if err != nil {
+			log.Println(err)
+			_model.CreateResponse(rw, http.StatusInternalServerError, "failed to read request body", nil)
+			return
+		}
+
+		defer r.Body.Close()
+
+		req := _model.UpdateBookRequest{}
+
+		if err = json.Unmarshal(body, &req); err != nil {
+			log.Println(err)
+			_model.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
+			return
+		}
+
+		res, code, message := bc.usecase.UpdateBook(req, existing.Book)
+
+		if code != http.StatusOK {
+			_model.CreateResponse(rw, code, message, nil)
+			return
+		}
+
+		_model.CreateResponse(rw, code, message, res)
+	}
+}

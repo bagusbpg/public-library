@@ -303,9 +303,14 @@ func (buc BookUseCase) UpdateBook(req _model.UpdateBookRequest, book _entity.Boo
 		book.Description = description
 	}
 
-	// if authors are updated, clear existing ones first
+	// if authors are updated
+	existingAuthors := map[string]interface{}{}
+	updatedAuthors := map[string]interface{}{}
+
 	if len(req.Author) > 0 {
-		book.Author = []_entity.Author{}
+		for _, author := range book.Author {
+			existingAuthors[author.Name] = nil
+		}
 	}
 
 	for _, _author := range req.Author {
@@ -313,22 +318,76 @@ func (buc BookUseCase) UpdateBook(req _model.UpdateBookRequest, book _entity.Boo
 		author.Name = strings.TrimSpace(_author.Name)
 
 		// check if there is any forbidden character in required field
-		if strings.Contains(strings.ReplaceAll(_author.Name, " ", ""), ";--") {
+		if strings.Contains(strings.ReplaceAll(author.Name, " ", ""), ";--") {
 			log.Println("forbidden character")
 			code, message = http.StatusBadRequest, "forbidden character"
 			return
 		}
 
-		book.Author = append(book.Author, author)
+		updatedAuthors[author.Name] = nil
 		flag = false
 	}
 
-	// check if pages invalid
-	if req.Pages < 0 {
-		log.Println("invalid number of pages")
-		code, message = http.StatusBadRequest, "invalid number of pages"
-		return
-	} else if req.Pages > 0 {
+	createdAuthors := []_entity.Author{}
+	droppedAuthors := []_entity.Author{}
+
+	for name := range updatedAuthors {
+		if _, exist := existingAuthors[name]; !exist {
+			createdAuthors = append(createdAuthors, _entity.Author{Name: name})
+		}
+	}
+
+	for name := range existingAuthors {
+		if _, exist := updatedAuthors[name]; !exist {
+			droppedAuthors = append(droppedAuthors, _entity.Author{Name: name})
+		}
+	}
+
+	// create author if len(createdAuthors) > 0
+	for _, _author := range createdAuthors {
+		// calling repository
+		author, err := buc.repository.GetAuthorByName(_author.Name)
+
+		// detect failure in repository
+		if err != nil {
+			code, message = http.StatusInternalServerError, "internal server error"
+			return
+		}
+
+		// if author does not exist, create new
+		if author.Name == "" {
+			author.Name = _author.Name
+
+			// calling repository
+			author, err = buc.repository.CreateNewAuthor(author)
+
+			// detect failure in repository
+			if err != nil {
+				code, message = http.StatusInternalServerError, "internal server error"
+				return
+			}
+		}
+
+		// if author exist or after author created, create book author junction
+		if err = buc.repository.CreateBookAuthorJunction(book, author); err != nil {
+			code, message = http.StatusInternalServerError, "internal server error"
+			return
+		}
+
+		book.Author = append(book.Author, author)
+	}
+
+	// drop author if len(droppedAuthors) > 0
+	for _, _author := range droppedAuthors {
+		if err := buc.repository.DeleteBookAuthorJunction(book, _author); err != nil {
+			code, message = http.StatusInternalServerError, "internal server error"
+			return
+		}
+
+		book.Author = _helper.RemoveAuthor(book.Author, _author)
+	}
+
+	if req.Pages > 0 {
 		book.Pages = req.Pages
 		flag = false
 	}

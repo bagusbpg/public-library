@@ -17,5 +17,6 @@ type Book interface {
 	GetBookById(bookId uint) (book _entity.Book, err error)
 	CountBookById(bookId uint) (count uint, err error)
 	UpdateBook(updatedBook _entity.Book) (book _entity.Book, err error)
+	DeleteBookAuthorJunction(book _entity.Book, author _entity.Author) (err error)
 	// DeleteBook(bookId int) (err error)
 }

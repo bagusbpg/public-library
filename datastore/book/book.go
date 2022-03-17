@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"strings"
+	"time"
 
 	_entity "plain-go/public-library/entity"
 )
@@ -292,6 +293,7 @@ func (br *BookRepository) GetBookAuthors(bookId uint) (authors []_entity.Author,
 		JOIN book_author_junction ba
 		ON a.id = ba.author_id
 		WHERE ba.book_id = ?
+		  AND ba.deleted_at IS NULL
 	`)
 
 	if err != nil {
@@ -420,6 +422,33 @@ func (br *BookRepository) UpdateBook(updatedBook _entity.Book) (book _entity.Boo
 	}
 
 	book = updatedBook
+
+	return
+}
+
+func (br *BookRepository) DeleteBookAuthorJunction(book _entity.Book, author _entity.Author) (err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		UPDATE book_author_junction
+		SET deleted_at = ?
+		WHERE book_id = ?
+		  AND author_id = ?
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	_, err = stmt.Exec(time.Now(), book.Id, author.Id)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	return
 }

@@ -37,7 +37,7 @@ func Router(
 	// DELETE	member/delete/favorites/1 -> delete my favorite based on book id (verified by token)
 
 	mux.Handle("/librarian/books", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.POST, _mw.JSONRequest, _mw.LibrarianAuthorization).Then(book.Create()))
-	// mux.Handle("/librarian/books/", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.PUT, _mw.JSONRequest, _mw.Authentication, _mw.AdminAuthorization).Then(book.Update()))
+	mux.Handle("/librarian/books/", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.PUT, _mw.JSONRequest, _mw.LibrarianAuthorization).Then(book.Update()))
 	mux.Handle("/librarian/users", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.GET, _mw.LibrarianAuthorization).Then(user.GetAll()))
 	// GET		librarian/requests -> get all requests
 	// GET		librarian/requests/1 -> get request of specific user
