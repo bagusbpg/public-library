@@ -1,7 +1,6 @@
 package router
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"regexp"
@@ -20,8 +19,6 @@ type route struct {
 	handler http.HandlerFunc
 }
 
-type ctxKey struct{}
-
 func NewRoute(method string, pattern string, handler http.HandlerFunc) route {
 	return route{
 		method,
@@ -39,6 +36,13 @@ func Router(
 		NewRoute(http.MethodPost, "/login", _mw.New(_mw.JSONRequest).Then(user.Login()).ServeHTTP),
 		NewRoute(http.MethodPost, "/users", _mw.New(_mw.JSONRequest).Then(user.SignUp()).ServeHTTP),
 		NewRoute(http.MethodGet, "/users", _mw.New(_mw.LibrarianAuthorization).Then(user.GetAll()).ServeHTTP),
+		NewRoute(http.MethodGet, "/users/(.*)", _mw.New(_mw.ValidateId, _mw.MemberAndLibrarianAuthorization).Then(user.Get()).ServeHTTP),
+		NewRoute(http.MethodPut, "/users/(.*)", _mw.New(_mw.ValidateId, _mw.MemberOnlyAuthorization, _mw.JSONRequest).Then(user.Update()).ServeHTTP),
+		NewRoute(http.MethodDelete, "/users/(.*)", _mw.New(_mw.ValidateId, _mw.MemberAndLibrarianAuthorization).Then(user.Delete()).ServeHTTP),
+		NewRoute(http.MethodPost, "/books", _mw.New(_mw.JSONRequest, _mw.LibrarianAuthorization).Then(book.Create()).ServeHTTP),
+		NewRoute(http.MethodGet, "/books", book.GetAll().ServeHTTP),
+		NewRoute(http.MethodGet, "/books/(.*)", _mw.New(_mw.ValidateId).Then(book.Get()).ServeHTTP),
+		NewRoute(http.MethodPut, "/books/(.*)", _mw.New(_mw.ValidateId, _mw.JSONRequest, _mw.LibrarianAuthorization).Then(book.Update()).ServeHTTP),
 	}
 
 	return func(rw http.ResponseWriter, r *http.Request) {
@@ -54,30 +58,33 @@ func Router(
 		log.Printf("%s %s %s%s\n", time, method, host, path)
 		log.SetFlags(log.Llongfile | log.LstdFlags)
 
-		notAllowed := []string{}
+		allowed := []string{}
 
 		for _, route := range routes {
 			matches := route.regex.FindStringSubmatch(r.URL.Path)
 
+			// if route is matched
 			if len(matches) > 0 {
+				// if method is not matched, continue
 				if r.Method != route.method {
-					notAllowed = append(notAllowed, route.method)
+					allowed = append(allowed, route.method)
 					continue
 				}
 
-				ctx := context.WithValue(r.Context(), ctxKey{}, matches[1:])
-
-				route.handler(rw, r.WithContext(ctx))
+				// if method is matched, call handler
+				route.handler(rw, r)
 				return
 			}
 		}
 
-		if len(notAllowed) > 0 {
+		// if endpoint is matched, but method is not
+		if len(allowed) > 0 {
 			log.Println("method not allowed")
 			_model.CreateResponse(rw, http.StatusMethodNotAllowed, "method not allowed", nil)
 			return
 		}
 
+		// if endpoint is not matched
 		log.Println("endpoint not found")
 		_model.CreateResponse(rw, http.StatusNotFound, "endpoint not found", nil)
 	}

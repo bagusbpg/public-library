@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	_helper "plain-go/public-library/helper"
 	_model "plain-go/public-library/model"
 	_userUseCase "plain-go/public-library/usecase/user"
 	"strconv"
@@ -97,9 +96,8 @@ func (uc UserController) Login() http.HandlerFunc {
 
 func (uc UserController) Get() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
-
-		userId, _, _ := _helper.ExtractToken(token)
+		str := strings.SplitAfter(r.URL.Path, "/")
+		userId, _ := strconv.Atoi(str[len(str)-1])
 
 		res, code, message := uc.usecase.GetUserById(uint(userId))
 

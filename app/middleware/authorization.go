@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func MemberOnlydAuthorization(handler http.Handler) http.Handler {
+func MemberOnlyAuthorization(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
 
