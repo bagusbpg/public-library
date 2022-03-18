@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func MemberOnlyAuthorization(handler http.Handler) http.Handler {
+func Authentication(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
 
@@ -19,12 +19,15 @@ func MemberOnlyAuthorization(handler http.Handler) http.Handler {
 			return
 		}
 
-		loginId, _, err := _helper.ExtractToken(token)
+		handler.ServeHTTP(rw, r)
+	})
+}
 
-		if err != nil {
-			_model.CreateResponse(rw, http.StatusUnauthorized, err.Error(), nil)
-			return
-		}
+func AuthorizedById(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
+
+		loginId, _, _ := _helper.ExtractToken(token)
 
 		str := strings.SplitAfter(r.URL.Path, "/")
 		userId, _ := strconv.Atoi(str[len(str)-1])
@@ -39,27 +42,18 @@ func MemberOnlyAuthorization(handler http.Handler) http.Handler {
 	})
 }
 
-func MemberAndLibrarianAuthorization(handler http.Handler) http.Handler {
+func MemberOnlyAuthorization(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
 
-		if token == "" {
-			log.Println("missing or malformed jwt")
-			_model.CreateResponse(rw, http.StatusBadRequest, "missing or malformed jwt", nil)
-			return
-		}
-
-		loginId, role, err := _helper.ExtractToken(token)
+		_, role, err := _helper.ExtractToken(token)
 
 		if err != nil {
 			_model.CreateResponse(rw, http.StatusUnauthorized, err.Error(), nil)
 			return
 		}
 
-		str := strings.SplitAfter(r.URL.Path, "/")
-		userId, _ := strconv.Atoi(str[len(str)-1])
-
-		if loginId != userId && role != "Librarian" {
+		if role != "member" {
 			log.Println("forbidden")
 			_model.CreateResponse(rw, http.StatusForbidden, "forbidden", nil)
 			return
@@ -69,15 +63,9 @@ func MemberAndLibrarianAuthorization(handler http.Handler) http.Handler {
 	})
 }
 
-func LibrarianAuthorization(handler http.Handler) http.Handler {
+func LibrarianOnlyAuthorization(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
-
-		if token == "" {
-			log.Println("missing or malformed jwt")
-			_model.CreateResponse(rw, http.StatusBadRequest, "missing or malformed jwt", nil)
-			return
-		}
 
 		_, role, err := _helper.ExtractToken(token)
 

@@ -8,7 +8,7 @@ type chain struct {
 	constructors []constructor
 }
 
-func New(constructors ...constructor) chain {
+func Do(constructors ...constructor) chain {
 	return chain{append(([]constructor)(nil), constructors...)}
 }
 

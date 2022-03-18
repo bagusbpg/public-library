@@ -517,3 +517,30 @@ func (br *BookRepository) AddBookToFavorite(userId uint, bookId uint) (err error
 
 	return
 }
+
+func (br *BookRepository) RemoveBookFromFavorite(userId uint, bookId uint) (err error) {
+	// prepare statement
+	stmt, err := br.db.Prepare(`
+		UPDATE favorites
+		SET deleted_at = ?
+		WHERE user_id = ?
+	  	  AND book_id = ?
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	_, err = stmt.Exec(time.Now(), userId, bookId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	return
+}

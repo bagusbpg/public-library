@@ -89,6 +89,14 @@ type UpdateBookResponse struct {
 	Book _entity.Book `json:"book"`
 }
 
+type AddBookToFavoriteRequest struct {
+	BookId uint `json:"book_id"`
+}
+
+type RemoveBookFromFavoriteRequest struct {
+	BookId uint `json:"book_id"`
+}
+
 type GetAllFavoritesResponse struct {
 	Favorites []_entity.Favorite `json:"favorites"`
 }
