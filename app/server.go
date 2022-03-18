@@ -50,12 +50,11 @@ func main() {
 	favoriteController := _favoriteController.New(favoriteUseCase)
 
 	// register handlers
-	mux := http.NewServeMux()
-	_router.Router(mux, userController, bookController, favoriteController)
+	router := http.HandlerFunc(_router.Router(userController, bookController, favoriteController))
 
 	// start the server
 	fmt.Println("Listening...")
-	if err := http.ListenAndServe(":3000", mux); err != nil {
+	if err := http.ListenAndServe(":3000", router); err != nil {
 		panic("error in listen and serve")
 	}
 }

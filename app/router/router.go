@@ -1,48 +1,84 @@
 package router
 
 import (
+	"context"
+	"log"
 	"net/http"
+	"regexp"
+	"time"
+
 	_mw "plain-go/public-library/app/middleware"
 	_book "plain-go/public-library/controller/book"
 	_favorite "plain-go/public-library/controller/favorite"
 	_user "plain-go/public-library/controller/user"
+	_model "plain-go/public-library/model"
 )
 
+type route struct {
+	method  string
+	regex   *regexp.Regexp
+	handler http.HandlerFunc
+}
+
+type ctxKey struct{}
+
+func NewRoute(method string, pattern string, handler http.HandlerFunc) route {
+	return route{
+		method,
+		regexp.MustCompile("^" + pattern + "$"),
+		handler,
+	}
+}
+
 func Router(
-	mux *http.ServeMux,
 	user *_user.UserController,
 	book *_book.BookController,
 	favorite *_favorite.FavoriteController,
-) {
-	mux.Handle("/public/signup", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.POST, _mw.JSONRequest).Then(user.SignUp()))
-	// mux.Handle("/public/stats", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.GET).Then(book.Stats()))
-	mux.Handle("/public/books", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.GET).Then(book.GetAll()))
-	mux.Handle("/public/books/", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.GET, _mw.ValidateId).Then(book.Get()))
-	// mux.Handle("/public/reviews/", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.GET).Then(review.GetAll()))
+) http.HandlerFunc {
+	routes := []route{
+		NewRoute(http.MethodPost, "/login", _mw.New(_mw.JSONRequest).Then(user.Login()).ServeHTTP),
+		NewRoute(http.MethodPost, "/users", _mw.New(_mw.JSONRequest).Then(user.SignUp()).ServeHTTP),
+		NewRoute(http.MethodGet, "/users", _mw.New(_mw.LibrarianAuthorization).Then(user.GetAll()).ServeHTTP),
+	}
 
-	mux.Handle("/login", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.POST, _mw.JSONRequest).Then(user.Login()))
+	return func(rw http.ResponseWriter, r *http.Request) {
+		// set JSON format as response
+		rw.Header().Add("Content-Type", "application/json")
 
-	mux.Handle("/member/profiles", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.GET, _mw.MemberAndLibrarianAuthorization).Then(user.Get()))
-	mux.Handle("/member/profiles/", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.PUT, _mw.JSONRequest, _mw.ValidateId, _mw.MemberOnlydAuthorization).Then(user.Update()))
-	// GET		member/requests -> get all my request (based on token); use query params to see history of past requests
-	// GET		member/requests/ -> get my specific request by request id (verified by token)
-	// POST		member/reviews -> create reviews (verified by token)
-	// PUT 		member/reviews/1 -> update review by review id (verified by token)
-	// POST		member/favorites -> create favorite book (based on token)
-	mux.Handle("/member/favorites/", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.GET, _mw.ValidateId, _mw.MemberAndLibrarianAuthorization).Then(favorite.GetAllFavorites()))
-	// OK GET	member/favorites/1 -> get all my favorite books by user id
-	// POST		member/wishlist -> create wishlist
-	// GET		member/wishlist/1 -> get all my wishlist by user id
-	mux.Handle("/member/delete/profiles/", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.DELETE, _mw.ValidateId, _mw.MemberAndLibrarianAuthorization).Then(user.Delete()))
-	// OK DELETE	member/delete/profiles/1 -> delete profile by user id (verified by token)
-	// DELETE	member/delete/requests/1 -> cancel borrow request by request id (verified by token)
-	// DELETE	member/delete/reviews/1 -> delete my review based on review id (verified by token)
-	// DELETE	member/delete/favorites/1 -> delete my favorite based on book id (verified by token)
+		// set logger
+		time := time.Now().Format("2006/01/02 15:04:05")
+		method := r.Method
+		host := r.URL.Host
+		path := r.URL.Path
+		log.SetFlags(0)
+		log.Printf("%s %s %s%s\n", time, method, host, path)
+		log.SetFlags(log.Llongfile | log.LstdFlags)
 
-	mux.Handle("/librarian/books", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.POST, _mw.JSONRequest, _mw.LibrarianAuthorization).Then(book.Create()))
-	mux.Handle("/librarian/books/", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.PUT, _mw.JSONRequest, _mw.LibrarianAuthorization).Then(book.Update()))
-	mux.Handle("/librarian/users", _mw.New(_mw.JSONResponse, _mw.Logger, _mw.GET, _mw.LibrarianAuthorization).Then(user.GetAll()))
-	// GET		librarian/requests -> get all requests
-	// GET		librarian/requests/1 -> get request of specific user
-	// GET		librarian/requests/1/1 -> get specific request of specific user
+		notAllowed := []string{}
+
+		for _, route := range routes {
+			matches := route.regex.FindStringSubmatch(r.URL.Path)
+
+			if len(matches) > 0 {
+				if r.Method != route.method {
+					notAllowed = append(notAllowed, route.method)
+					continue
+				}
+
+				ctx := context.WithValue(r.Context(), ctxKey{}, matches[1:])
+
+				route.handler(rw, r.WithContext(ctx))
+				return
+			}
+		}
+
+		if len(notAllowed) > 0 {
+			log.Println("method not allowed")
+			_model.CreateResponse(rw, http.StatusMethodNotAllowed, "method not allowed", nil)
+			return
+		}
+
+		log.Println("endpoint not found")
+		_model.CreateResponse(rw, http.StatusNotFound, "endpoint not found", nil)
+	}
 }

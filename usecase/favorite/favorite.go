@@ -18,6 +18,50 @@ func New(book _bookRepository.Book, user _userRepository.User) *FavoriteUseCase 
 	return &FavoriteUseCase{bookRepo: book, userRepo: user}
 }
 
+func (fuc FavoriteUseCase) AddBookToFavorite(userId uint, bookId uint) (code int, message string) {
+	// check user existence
+	user, err := fuc.userRepo.GetUserById(userId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// check if user does not exist
+	if user.Name == "" {
+		log.Println("user not found")
+		code, message = http.StatusNotFound, "user not found"
+		return
+	}
+
+	// check book existence
+	book, err := fuc.bookRepo.GetBookById(bookId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// check if user does not exist
+	if book.Title == "" {
+		log.Println("book not found")
+		code, message = http.StatusNotFound, "book not found"
+		return
+	}
+
+	// calling repository
+	if err = fuc.bookRepo.AddBookToFavorite(userId, bookId); err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	code, message = http.StatusCreated, "success add book to favorites"
+
+	return
+}
+
 func (fuc FavoriteUseCase) GetAllFavorites(userId uint) (res _model.GetAllFavoritesResponse, code int, message string) {
 	// check user existence
 	user, err := fuc.userRepo.GetUserById(userId)

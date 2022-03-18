@@ -492,3 +492,28 @@ func (br *BookRepository) GetAllFavorites(userId uint) (favorites []_entity.Favo
 
 	return
 }
+
+func (br *BookRepository) AddBookToFavorite(userId uint, bookId uint) (err error) {
+	// prepare statement
+	stmt, err := br.db.Prepare(`
+		INSERT INTO favorites (user_id, book_id, created_at)
+		VALUES (?, ?, ?)
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	_, err = stmt.Exec(userId, bookId, time.Now())
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	return
+}

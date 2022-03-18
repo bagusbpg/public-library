@@ -16,6 +16,12 @@ func New(favorite _favoriteUseCase.Favorite) *FavoriteController {
 	return &FavoriteController{usecase: favorite}
 }
 
+func (fc FavoriteController) AddBookToFavorite() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+
+	}
+}
+
 func (fc FavoriteController) GetAllFavorites() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		str := strings.SplitAfter(r.URL.Path, "/")
