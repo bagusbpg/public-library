@@ -44,9 +44,9 @@ func Router(
 		NewRoute(http.MethodGet, "/books", book.GetAll().ServeHTTP),
 		NewRoute(http.MethodGet, "/books/(.+)", _mw.Do(_mw.ValidateId).Then(book.Get()).ServeHTTP),
 		NewRoute(http.MethodPut, "/books/(.+)", _mw.Do(_mw.ValidateId, _mw.JSONRequest, _mw.Authentication, _mw.LibrarianOnlyAuthorization).Then(book.Update()).ServeHTTP),
-		NewRoute(http.MethodPost, "/users/(.+)/favorites", _mw.Do(_mw.Authentication, _mw.JSONRequest).Then(favorite.AddBook()).ServeHTTP),
-		NewRoute(http.MethodGet, "/users/(.+)/favorites", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById).Then(favorite.GetAll()).ServeHTTP),
-		NewRoute(http.MethodDelete, "/users/(.+)/favorites", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById).Then(favorite.RemoveBook()).ServeHTTP),
+		NewRoute(http.MethodPost, "/favorites/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.JSONRequest).Then(favorite.AddBook()).ServeHTTP),
+		NewRoute(http.MethodGet, "/favorites/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById).Then(favorite.GetAll()).ServeHTTP),
+		NewRoute(http.MethodDelete, "/favorites/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.JSONRequest).Then(favorite.RemoveBook()).ServeHTTP),
 	}
 
 	return func(rw http.ResponseWriter, r *http.Request) {

@@ -5,11 +5,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	_helper "plain-go/public-library/helper"
+	_mw "plain-go/public-library/app/middleware"
 	_model "plain-go/public-library/model"
 	_favoriteUseCase "plain-go/public-library/usecase/favorite"
 	"strconv"
-	"strings"
 )
 
 type FavoriteController struct {
@@ -22,9 +21,7 @@ func New(favorite _favoriteUseCase.Favorite) *FavoriteController {
 
 func (fc FavoriteController) AddBook() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
-
-		loginId, _, _ := _helper.ExtractToken(token)
+		userId, _ := strconv.Atoi(_mw.GetParam(r, 0))
 
 		body, err := ioutil.ReadAll(r.Body)
 
@@ -44,7 +41,7 @@ func (fc FavoriteController) AddBook() http.HandlerFunc {
 			return
 		}
 
-		code, message := fc.usecase.AddBookToFavorite(uint(loginId), req.BookId)
+		code, message := fc.usecase.AddBookToFavorite(uint(userId), req.BookId)
 
 		_model.CreateResponse(rw, code, message, nil)
 	}
@@ -52,8 +49,7 @@ func (fc FavoriteController) AddBook() http.HandlerFunc {
 
 func (fc FavoriteController) RemoveBook() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		str := strings.SplitAfter(r.URL.Path, "/")
-		userId, _ := strconv.Atoi(str[len(str)-1])
+		userId, _ := strconv.Atoi(_mw.GetParam(r, 0))
 
 		body, err := ioutil.ReadAll(r.Body)
 
@@ -81,8 +77,7 @@ func (fc FavoriteController) RemoveBook() http.HandlerFunc {
 
 func (fc FavoriteController) GetAll() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		str := strings.SplitAfter(r.URL.Path, "/")
-		userId, _ := strconv.Atoi(str[len(str)-1])
+		userId, _ := strconv.Atoi(_mw.GetParam(r, 0))
 
 		res, code, message := fc.usecase.GetAllFavorites(uint(userId))
 
