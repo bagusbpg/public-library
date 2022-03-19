@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"regexp"
@@ -36,16 +37,16 @@ func Router(
 		NewRoute(http.MethodPost, "/login", _mw.Do(_mw.JSONRequest).Then(user.Login()).ServeHTTP),
 		NewRoute(http.MethodPost, "/users", _mw.Do(_mw.JSONRequest).Then(user.SignUp()).ServeHTTP),
 		NewRoute(http.MethodGet, "/users", _mw.Do(_mw.Authentication, _mw.LibrarianOnlyAuthorization).Then(user.GetAll()).ServeHTTP),
-		NewRoute(http.MethodGet, "/users/(.*)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById).Then(user.Get()).ServeHTTP),
-		NewRoute(http.MethodPut, "/users/(.*)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.JSONRequest).Then(user.Update()).ServeHTTP),
-		NewRoute(http.MethodDelete, "/users/(.*)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById).Then(user.Delete()).ServeHTTP),
+		NewRoute(http.MethodGet, "/users/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById).Then(user.Get()).ServeHTTP),
+		NewRoute(http.MethodPut, "/users/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.JSONRequest).Then(user.Update()).ServeHTTP),
+		NewRoute(http.MethodDelete, "/users/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById).Then(user.Delete()).ServeHTTP),
 		NewRoute(http.MethodPost, "/books", _mw.Do(_mw.JSONRequest, _mw.LibrarianOnlyAuthorization).Then(book.Create()).ServeHTTP),
 		NewRoute(http.MethodGet, "/books", book.GetAll().ServeHTTP),
-		NewRoute(http.MethodGet, "/books/(.*)", _mw.Do(_mw.ValidateId).Then(book.Get()).ServeHTTP),
-		NewRoute(http.MethodPut, "/books/(.*)", _mw.Do(_mw.ValidateId, _mw.JSONRequest, _mw.Authentication, _mw.LibrarianOnlyAuthorization).Then(book.Update()).ServeHTTP),
-		NewRoute(http.MethodPost, "/favorites", _mw.Do(_mw.Authentication, _mw.JSONRequest).Then(favorite.AddBook()).ServeHTTP),
-		NewRoute(http.MethodGet, "/favorites/(.*)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById).Then(favorite.GetAll()).ServeHTTP),
-		NewRoute(http.MethodDelete, "/favorites/(.*)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById).Then(favorite.RemoveBook()).ServeHTTP),
+		NewRoute(http.MethodGet, "/books/(.+)", _mw.Do(_mw.ValidateId).Then(book.Get()).ServeHTTP),
+		NewRoute(http.MethodPut, "/books/(.+)", _mw.Do(_mw.ValidateId, _mw.JSONRequest, _mw.Authentication, _mw.LibrarianOnlyAuthorization).Then(book.Update()).ServeHTTP),
+		NewRoute(http.MethodPost, "/users/(.+)/favorites", _mw.Do(_mw.Authentication, _mw.JSONRequest).Then(favorite.AddBook()).ServeHTTP),
+		NewRoute(http.MethodGet, "/users/(.+)/favorites", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById).Then(favorite.GetAll()).ServeHTTP),
+		NewRoute(http.MethodDelete, "/users/(.+)/favorites", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById).Then(favorite.RemoveBook()).ServeHTTP),
 	}
 
 	return func(rw http.ResponseWriter, r *http.Request) {
@@ -75,7 +76,9 @@ func Router(
 				}
 
 				// if method is matched, call handler
-				route.handler(rw, r)
+				// embed params to context
+				ctx := context.WithValue(r.Context(), _mw.ContextKey{}, matches[1:])
+				route.handler(rw, r.WithContext(ctx))
 				return
 			}
 		}

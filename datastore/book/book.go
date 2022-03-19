@@ -453,46 +453,6 @@ func (br *BookRepository) DeleteBookAuthorJunction(book _entity.Book, author _en
 	return
 }
 
-func (br *BookRepository) GetAllFavorites(userId uint) (favorites []_entity.Favorite, err error) {
-	// prepare statement before execution
-	stmt, err := br.db.Prepare(`
-		SELECT id, book_id, created_at
-		FROM favorites
-		WHERE user_id = ?
-		  AND deleted_at IS NULL
-	`)
-
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	defer stmt.Close()
-
-	// execute statement
-	row, err := stmt.Query(userId)
-
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	defer row.Close()
-
-	for row.Next() {
-		favorite := _entity.Favorite{}
-
-		if err = row.Scan(&favorite.Id, &favorite.Book.Id, &favorite.CreatedAt); err != nil {
-			log.Println(err)
-			return
-		}
-
-		favorites = append(favorites, favorite)
-	}
-
-	return
-}
-
 func (br *BookRepository) AddBookToFavorite(userId uint, bookId uint) (err error) {
 	// prepare statement
 	stmt, err := br.db.Prepare(`
@@ -543,4 +503,48 @@ func (br *BookRepository) RemoveBookFromFavorite(userId uint, bookId uint) (err 
 	}
 
 	return
+}
+
+func (br *BookRepository) GetAllFavorites(userId uint) (favorites []_entity.Favorite, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		SELECT id, book_id, created_at
+		FROM favorites
+		WHERE user_id = ?
+		  AND deleted_at IS NULL
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query(userId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	for row.Next() {
+		favorite := _entity.Favorite{}
+
+		if err = row.Scan(&favorite.Id, &favorite.Book.Id, &favorite.CreatedAt); err != nil {
+			log.Println(err)
+			return
+		}
+
+		favorites = append(favorites, favorite)
+	}
+
+	return
+}
+
+func (br *BookRepository) Add() {
+
 }

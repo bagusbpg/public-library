@@ -5,10 +5,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	_mw "plain-go/public-library/app/middleware"
 	_model "plain-go/public-library/model"
 	_userUseCase "plain-go/public-library/usecase/user"
 	"strconv"
-	"strings"
 )
 
 type UserController struct {
@@ -96,8 +96,7 @@ func (uc UserController) Login() http.HandlerFunc {
 
 func (uc UserController) Get() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		str := strings.SplitAfter(r.URL.Path, "/")
-		userId, _ := strconv.Atoi(str[len(str)-1])
+		userId, _ := strconv.Atoi(_mw.GetParam(r, 0))
 
 		res, code, message := uc.usecase.GetUserById(uint(userId))
 
@@ -114,8 +113,7 @@ func (uc UserController) Get() http.HandlerFunc {
 
 func (uc UserController) Update() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		str := strings.SplitAfter(r.URL.Path, "/")
-		userId, _ := strconv.Atoi(str[len(str)-1])
+		userId, _ := strconv.Atoi(_mw.GetParam(r, 0))
 
 		existing, code, message := uc.usecase.GetUserById(uint(userId))
 
@@ -155,8 +153,7 @@ func (uc UserController) Update() http.HandlerFunc {
 
 func (uc UserController) Delete() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		str := strings.SplitAfter(r.URL.Path, "/")
-		userId, _ := strconv.Atoi(str[len(str)-1])
+		userId, _ := strconv.Atoi(_mw.GetParam(r, 0))
 
 		_, code, message := uc.usecase.GetUserById(uint(userId))
 

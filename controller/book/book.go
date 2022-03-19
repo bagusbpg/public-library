@@ -5,10 +5,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	_mw "plain-go/public-library/app/middleware"
 	_model "plain-go/public-library/model"
 	_bookUseCase "plain-go/public-library/usecase/book"
 	"strconv"
-	"strings"
 )
 
 type BookController struct {
@@ -65,8 +65,7 @@ func (bc BookController) GetAll() http.HandlerFunc {
 
 func (bc BookController) Get() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		str := strings.SplitAfter(r.URL.Path, "/")
-		bookId, _ := strconv.Atoi(str[len(str)-1])
+		bookId, _ := strconv.Atoi(_mw.GetParam(r, 0))
 
 		existing, code, message := bc.usecase.GetBookById(uint(bookId))
 
@@ -81,8 +80,7 @@ func (bc BookController) Get() http.HandlerFunc {
 
 func (bc BookController) Update() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		str := strings.SplitAfter(r.URL.Path, "/")
-		bookId, _ := strconv.Atoi(str[len(str)-1])
+		bookId, _ := strconv.Atoi(_mw.GetParam(r, 0))
 
 		existing, code, message := bc.usecase.GetBookById(uint(bookId))
 

@@ -29,8 +29,7 @@ func AuthorizedById(handler http.Handler) http.Handler {
 
 		loginId, _, _ := _helper.ExtractToken(token)
 
-		str := strings.SplitAfter(r.URL.Path, "/")
-		userId, _ := strconv.Atoi(str[len(str)-1])
+		userId, _ := strconv.Atoi(GetParam(r, 0))
 
 		if loginId != userId {
 			log.Println("forbidden")
