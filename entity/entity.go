@@ -81,3 +81,11 @@ type Favorite struct {
 	Book      Book      `json:"book"`
 	CreatedAt time.Time `json:"created_at"`
 }
+
+type Wish struct {
+	Id        uint      `json:"id"`
+	Title     string    `json:"title"`
+	Author    []Author  `json:"author"`
+	Category  string    `json:"category"`
+	CreatedAt time.Time `json:"created_at"`
+}

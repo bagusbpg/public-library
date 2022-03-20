@@ -545,6 +545,171 @@ func (br *BookRepository) GetAllFavorites(userId uint) (favorites []_entity.Favo
 	return
 }
 
-func (br *BookRepository) Add() {
+func (br *BookRepository) AddBookToWishlist(userId uint, newWish _entity.Wish) (wish _entity.Wish, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		INSERT INTO wishlists (user_id, title, category, created_at)
+		VALUES (?, ?, ?, ?)
+	`)
 
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	res, err := stmt.Exec(userId, newWish.Title, newWish.Category, newWish.CreatedAt)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	// get new book id
+	id, err := res.LastInsertId()
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	wish = newWish
+	wish.Id = uint(id)
+
+	return
+}
+
+func (br *BookRepository) RemoveBookFromWishlist(wishId uint) (err error) {
+	// prepare statement
+	stmt, err := br.db.Prepare(`
+		UPDATE wishlists
+		SET deleted_at = ?
+		WHERE wish_id = ?
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	_, err = stmt.Exec(time.Now(), wishId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	return
+}
+
+func (br *BookRepository) GetAllWishes(userId uint) (wishes []_entity.Wish, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		SELECT id, title, category, created_at
+		FROM wishlists
+		WHERE user_id = ?
+		  AND deleted_at IS NULL
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query(userId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	for row.Next() {
+		wish := _entity.Wish{}
+
+		if err = row.Scan(&wish.Id, &wish.Title, &wish.Category, &wish.CreatedAt); err != nil {
+			log.Println(err)
+			return
+		}
+
+		wishes = append(wishes, wish)
+	}
+
+	return
+}
+
+func (br *BookRepository) CreateWishAuthorJunction(wish _entity.Wish, author _entity.Author) (err error) {
+	// prepare statement
+	stmt, err := br.db.Prepare(`
+		INSERT INTO wish_author_junction (wish_id, author_id)
+		VALUES (?, ?)
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	_, err = stmt.Exec(wish.Id, author.Id)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	return
+}
+
+func (br *BookRepository) GetWishAuthors(wishId uint) (authors []_entity.Author, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		SELECT a.id, a.name
+		FROM authors a
+		JOIN wish_author_junction wa
+		ON a.id = wa.author_id
+		WHERE wa.wish_id = ?
+		  AND wa.deleted_at IS NULL
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query(wishId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	for row.Next() {
+		author := _entity.Author{}
+
+		if err = row.Scan(&author.Id, &author.Name); err != nil {
+			log.Println(err)
+			return
+		}
+
+		authors = append(authors, author)
+	}
+
+	return
 }
