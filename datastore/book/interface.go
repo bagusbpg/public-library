@@ -22,4 +22,9 @@ type Book interface {
 	AddBookToFavorite(userId uint, bookId uint) (err error)
 	RemoveBookFromFavorite(userId uint, bookId uint) (err error)
 	GetAllFavorites(userId uint) (favorites []_entity.Favorite, err error)
+	AddBookToWishlist(userId uint, newWish _entity.Wish) (wish _entity.Wish, err error)
+	RemoveBookFromWishlist(wishId uint) (err error)
+	GetAllWishes(userId uint) (wishes []_entity.Wish, err error)
+	CreateWishAuthorJunction(wish _entity.Wish, author _entity.Author) (err error)
+	GetWishAuthors(wishId uint) (authors []_entity.Author, err error)
 }

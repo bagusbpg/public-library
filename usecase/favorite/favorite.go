@@ -198,6 +198,10 @@ func (fuc FavoriteUseCase) GetAllFavorites(userId uint) (res _model.GetAllFavori
 		res.Favorites = append(res.Favorites, _entity.Favorite{Id: fav.Id, Book: book, CreatedAt: fav.CreatedAt})
 	}
 
+	res.User = user
+	res.User.Password = ""
+	res.User.CreatedAt, _ = _helper.TimeFormatter(res.User.CreatedAt)
+	res.User.UpdatedAt, _ = _helper.TimeFormatter(res.User.UpdatedAt)
 	code, message = http.StatusOK, "success get all favorites"
 
 	return

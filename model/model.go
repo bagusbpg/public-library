@@ -98,5 +98,17 @@ type RemoveBookFromFavoriteRequest struct {
 }
 
 type GetAllFavoritesResponse struct {
+	User      _entity.User       `json:"user"`
 	Favorites []_entity.Favorite `json:"favorites"`
+}
+
+type GetAllWishes struct {
+	User   _entity.User   `json:"user"`
+	Wishes []_entity.Wish `json:"wishes"`
+}
+
+type AddBookToWishlistRequest struct {
+	Title    string                `json:"title"`
+	Author   []CreateAuthorRequest `json:"authors"`
+	Category string                `json:"category"`
 }
