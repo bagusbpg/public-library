@@ -65,7 +65,7 @@ func (bc BookController) GetAll() http.HandlerFunc {
 
 func (bc BookController) Get() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		bookId, _ := strconv.Atoi(_mw.GetParam(r, 0))
+		bookId, _ := strconv.Atoi(_mw.GetParam(r)[0])
 
 		existing, code, message := bc.usecase.GetBookById(uint(bookId))
 
@@ -80,7 +80,7 @@ func (bc BookController) Get() http.HandlerFunc {
 
 func (bc BookController) Update() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		bookId, _ := strconv.Atoi(_mw.GetParam(r, 0))
+		bookId, _ := strconv.Atoi(_mw.GetParam(r)[0])
 
 		existing, code, message := bc.usecase.GetBookById(uint(bookId))
 

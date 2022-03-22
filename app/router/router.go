@@ -11,6 +11,7 @@ import (
 	_book "plain-go/public-library/controller/book"
 	_favorite "plain-go/public-library/controller/favorite"
 	_user "plain-go/public-library/controller/user"
+	_wish "plain-go/public-library/controller/wish"
 	_model "plain-go/public-library/model"
 )
 
@@ -32,6 +33,7 @@ func Router(
 	user *_user.UserController,
 	book *_book.BookController,
 	favorite *_favorite.FavoriteController,
+	wish *_wish.WishController,
 ) http.HandlerFunc {
 	routes := []route{
 		NewRoute(http.MethodPost, "/login", _mw.Do(_mw.JSONRequest).Then(user.Login()).ServeHTTP),
@@ -45,8 +47,12 @@ func Router(
 		NewRoute(http.MethodGet, "/books/(.+)", _mw.Do(_mw.ValidateId).Then(book.Get()).ServeHTTP),
 		NewRoute(http.MethodPut, "/books/(.+)", _mw.Do(_mw.ValidateId, _mw.JSONRequest, _mw.Authentication, _mw.LibrarianOnlyAuthorization).Then(book.Update()).ServeHTTP),
 		NewRoute(http.MethodPost, "/favorites/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.JSONRequest).Then(favorite.AddBook()).ServeHTTP),
-		NewRoute(http.MethodGet, "/favorites/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById).Then(favorite.GetAll()).ServeHTTP),
 		NewRoute(http.MethodDelete, "/favorites/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.JSONRequest).Then(favorite.RemoveBook()).ServeHTTP),
+		NewRoute(http.MethodGet, "/favorites/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById).Then(favorite.GetAll()).ServeHTTP),
+		NewRoute(http.MethodGet, "/wishes", _mw.Do(_mw.Authentication, _mw.LibrarianOnlyAuthorization).Then(wish.GetAll()).ServeHTTP),
+		NewRoute(http.MethodPost, "/wishes/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.JSONRequest).Then(wish.AddBook()).ServeHTTP),
+		NewRoute(http.MethodGet, "/wishes/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.MemberOnlyAuthorization).Then(wish.GetAllByUser()).ServeHTTP),
+		NewRoute(http.MethodDelete, "/wishes/(.+)/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.MemberOnlyAuthorization).Then(wish.RemoveBook()).ServeHTTP),
 	}
 
 	return func(rw http.ResponseWriter, r *http.Request) {

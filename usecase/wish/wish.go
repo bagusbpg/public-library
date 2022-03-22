@@ -10,21 +10,22 @@ import (
 	_entity "plain-go/public-library/entity"
 	_helper "plain-go/public-library/helper"
 	"strings"
+	"time"
 
 	// _entity "plain-go/public-library/entity"
 	_model "plain-go/public-library/model"
 )
 
 type WishUseCase struct {
-	userRepo _userRepository.User
 	bookRepo _bookRepository.Book
+	userRepo _userRepository.User
 }
 
-func New(user _userRepository.User, book _bookRepository.Book) *WishUseCase {
-	return &WishUseCase{userRepo: user, bookRepo: book}
+func New(book _bookRepository.Book, user _userRepository.User) *WishUseCase {
+	return &WishUseCase{bookRepo: book, userRepo: user}
 }
 
-func (wuc WishUseCase) AddBookToWishlist(userId uint, req _model.AddBookToWishlistRequest) (code int, message string) {
+func (wuc WishUseCase) AddBookToWishlist(userId uint, req _model.AddBookToWishlistRequest) (res _model.AddBookToWishlistResponse, code int, message string) {
 	// prepare input string
 	title := strings.Title(strings.TrimSpace(req.Title))
 	category := strings.TrimSpace(req.Category)
@@ -88,7 +89,7 @@ func (wuc WishUseCase) AddBookToWishlist(userId uint, req _model.AddBookToWishli
 		return
 	}
 
-	// check if book already exist
+	// check if book already purchased
 	book, err := wuc.bookRepo.GetBookByTitle(req.Title)
 
 	// detect failure in repository
@@ -97,19 +98,175 @@ func (wuc WishUseCase) AddBookToWishlist(userId uint, req _model.AddBookToWishli
 		return
 	}
 
-	// check if book is already exist (purchased by library)
 	if book.Title != "" {
 		log.Println("book already exist")
 		code, message = http.StatusConflict, "book already exist"
 		return
 	}
 
-	// check if book is already entered in wishlist
+	// check if book already in wishlist
+	wishes, err := wuc.bookRepo.GetWishesByUserId(userId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	for _, wish := range wishes {
+		if wish.Title == title {
+			code, message = http.StatusConflict, "book already in wishlist"
+			return
+		}
+	}
+
+	// prepare input to repository
+	newWish := _entity.Wish{}
+	newWish.Title = title
+	newWish.Category = category
+	newWish.CreatedAt = time.Now()
+
+	// calling repository
+	res.Wish, err = wuc.bookRepo.AddBookToWishlist(userId, newWish)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// create author
+	for _, _author := range req.Author {
+		// calling repository
+		author, err := wuc.bookRepo.GetAuthorByName(_author.Name)
+
+		// detect failure in repository
+		if err != nil {
+			code, message = http.StatusInternalServerError, "internal server error"
+			return
+		}
+
+		// if author does not exist, create new
+		if author.Name == "" {
+			author.Name = _author.Name
+
+			// calling repository
+			author, err = wuc.bookRepo.CreateNewAuthor(author)
+
+			// detect failure in repository
+			if err != nil {
+				code, message = http.StatusInternalServerError, "internal server error"
+				return
+			}
+		}
+
+		// if author exist or after author created, create book author junction
+		if err = wuc.bookRepo.CreateWishAuthorJunction(newWish, author); err != nil {
+			code, message = http.StatusInternalServerError, "internal server error"
+			return
+		}
+
+		res.Wish.Author = append(res.Wish.Author, author)
+	}
+
+	res.Wish.CreatedAt, _ = _helper.TimeFormatter(res.Wish.CreatedAt)
+	code, message = http.StatusCreated, "success add book to wishlist"
 
 	return
 }
 
-func (wuc WishUseCase) GetAllWishes(userId uint) (res _model.GetAllWishes, code int, message string) {
+func (wuc WishUseCase) RemoveBookFromWishlist(userId uint, wishId uint) (code int, message string) {
+	// check user existence
+	user, err := wuc.userRepo.GetUserById(userId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	if user.Name == "" {
+		log.Println("user not found")
+		code, message = http.StatusNotFound, "user not found"
+		return
+	}
+
+	// check wish existence
+	wish, err := wuc.bookRepo.GetWishById(userId, wishId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	if wish.Title == "" {
+		log.Println("wish not found")
+		code, message = http.StatusNotFound, "wish not found"
+		return
+	}
+
+	// calling repository
+	if err = wuc.bookRepo.RemoveBookFromWishlist(wishId); err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	code, message = http.StatusOK, "success remove book from favorites"
+
+	return
+}
+
+func (wuc WishUseCase) GetAllWishes() (res []_model.GetWishesByUserIdResponse, code int, message string) {
+	// get all users
+	users, err := wuc.userRepo.GetAllUsers()
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	for _, user := range users {
+		// get wishes of each user
+		wishes, err := wuc.bookRepo.GetWishesByUserId(user.Id)
+
+		// detect failure in repository
+		if err != nil {
+			code, message = http.StatusInternalServerError, "internal server error"
+			return
+		}
+
+		for _, wish := range wishes {
+			// getting each book's authors
+			authors, err := wuc.bookRepo.GetWishAuthors(wish.Id)
+
+			// detect failure in repository
+			if err != nil {
+				code, message = http.StatusInternalServerError, "internal server error"
+				return
+			}
+
+			wish.Author = authors
+			wish.CreatedAt, _ = _helper.TimeFormatter(wish.CreatedAt)
+
+		}
+
+		if len(wishes) != 0 {
+			// formatting response
+			user.Password = ""
+			user.CreatedAt, _ = _helper.TimeFormatter(user.CreatedAt)
+			user.UpdatedAt, _ = _helper.TimeFormatter(user.UpdatedAt)
+			res = append(res, _model.GetWishesByUserIdResponse{User: user, Wishes: wishes})
+		}
+	}
+
+	code, message = http.StatusOK, "success get all wishes"
+
+	return
+}
+
+func (wuc WishUseCase) GetAllWishesByUserId(userId uint) (res _model.GetWishesByUserIdResponse, code int, message string) {
 	// check user existence
 	user, err := wuc.userRepo.GetUserById(userId)
 
@@ -127,7 +284,7 @@ func (wuc WishUseCase) GetAllWishes(userId uint) (res _model.GetAllWishes, code 
 	}
 
 	// calling repository
-	wishes, err := wuc.bookRepo.GetAllWishes(userId)
+	wishes, err := wuc.bookRepo.GetWishesByUserId(userId)
 
 	// detect failure in repository
 	if err != nil {

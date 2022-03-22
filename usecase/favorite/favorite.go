@@ -19,7 +19,7 @@ func New(book _bookRepository.Book, user _userRepository.User) *FavoriteUseCase 
 	return &FavoriteUseCase{bookRepo: book, userRepo: user}
 }
 
-func (fuc FavoriteUseCase) AddBookToFavorite(userId uint, bookId uint) (code int, message string) {
+func (fuc FavoriteUseCase) AddBookToFavorite(userId uint, bookId uint) (res _model.AddBookToFavoriteResponse, code int, message string) {
 	// check user existence
 	user, err := fuc.userRepo.GetUserById(userId)
 
@@ -61,23 +61,24 @@ func (fuc FavoriteUseCase) AddBookToFavorite(userId uint, bookId uint) (code int
 		return
 	}
 
-	favMap := map[uint]interface{}{}
-
-	for _, item := range favs {
-		favMap[item.Book.Id] = nil
-	}
-
-	if _, exist := favMap[bookId]; exist {
-		code, message = http.StatusConflict, "book already in favorites"
-		return
+	for _, fav := range favs {
+		if fav.Book.Id == bookId {
+			code, message = http.StatusConflict, "book already in favorites"
+			return
+		}
 	}
 
 	// calling repository
-	if err = fuc.bookRepo.AddBookToFavorite(userId, bookId); err != nil {
+	res.Favorite, err = fuc.bookRepo.AddBookToFavorite(userId, bookId)
+
+	// detect failure in repository
+	if err != nil {
 		code, message = http.StatusInternalServerError, "internal server error"
 		return
 	}
 
+	res.Favorite.Book = book
+	res.Favorite.CreatedAt, _ = _helper.TimeFormatter(res.Favorite.CreatedAt)
 	code, message = http.StatusCreated, "success add book to favorites"
 
 	return
@@ -93,7 +94,6 @@ func (fuc FavoriteUseCase) RemoveBookFromFavorite(userId uint, bookId uint) (cod
 		return
 	}
 
-	// check if user does not exist
 	if user.Name == "" {
 		log.Println("user not found")
 		code, message = http.StatusNotFound, "user not found"
@@ -109,7 +109,6 @@ func (fuc FavoriteUseCase) RemoveBookFromFavorite(userId uint, bookId uint) (cod
 		return
 	}
 
-	// check if book does not exist
 	if book.Title == "" {
 		log.Println("book not found")
 		code, message = http.StatusNotFound, "book not found"
@@ -125,13 +124,15 @@ func (fuc FavoriteUseCase) RemoveBookFromFavorite(userId uint, bookId uint) (cod
 		return
 	}
 
-	favMap := map[uint]interface{}{}
+	flag := true
 
-	for _, item := range favs {
-		favMap[item.Book.Id] = nil
+	for i := 0; i < len(favs) && flag; i++ {
+		if favs[i].Book.Id == bookId {
+			flag = false
+		}
 	}
 
-	if _, exist := favMap[bookId]; !exist {
+	if flag {
 		code, message = http.StatusNotFound, "book not in favorites"
 		return
 	}

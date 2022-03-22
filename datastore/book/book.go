@@ -453,7 +453,7 @@ func (br *BookRepository) DeleteBookAuthorJunction(book _entity.Book, author _en
 	return
 }
 
-func (br *BookRepository) AddBookToFavorite(userId uint, bookId uint) (err error) {
+func (br *BookRepository) AddBookToFavorite(userId uint, bookId uint) (favorite _entity.Favorite, err error) {
 	// prepare statement
 	stmt, err := br.db.Prepare(`
 		INSERT INTO favorites (user_id, book_id, created_at)
@@ -468,12 +468,24 @@ func (br *BookRepository) AddBookToFavorite(userId uint, bookId uint) (err error
 	defer stmt.Close()
 
 	// execute statement
-	_, err = stmt.Exec(userId, bookId, time.Now())
+	now := time.Now()
+	res, err := stmt.Exec(userId, bookId, now)
 
 	if err != nil {
 		log.Println(err)
 		return
 	}
+
+	// get new book id
+	id, err := res.LastInsertId()
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	favorite.Id = uint(id)
+	favorite.CreatedAt = now
 
 	return
 }
@@ -607,7 +619,7 @@ func (br *BookRepository) RemoveBookFromWishlist(wishId uint) (err error) {
 	return
 }
 
-func (br *BookRepository) GetAllWishes(userId uint) (wishes []_entity.Wish, err error) {
+func (br *BookRepository) GetWishesByUserId(userId uint) (wishes []_entity.Wish, err error) {
 	// prepare statement before execution
 	stmt, err := br.db.Prepare(`
 		SELECT id, title, category, created_at
@@ -642,6 +654,43 @@ func (br *BookRepository) GetAllWishes(userId uint) (wishes []_entity.Wish, err 
 		}
 
 		wishes = append(wishes, wish)
+	}
+
+	return
+}
+
+func (br *BookRepository) GetWishById(userId uint, wishId uint) (wish _entity.Wish, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		SELECT id, title, category, created_at
+		FROM wishlists
+		WHERE deleted_at IS NULL
+		  AND id = ?
+		  AND user_id = ?
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query(wishId, userId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	if row.Next() {
+		if err = row.Scan(&wish.Id, &wish.Title, &wish.Category, &wish.CreatedAt); err != nil {
+			log.Println(err)
+			return
+		}
 	}
 
 	return

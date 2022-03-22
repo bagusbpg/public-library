@@ -6,8 +6,6 @@ import (
 
 type ContextKey struct{}
 
-func GetParam(r *http.Request, index int) string {
-	params := r.Context().Value(ContextKey{}).([]string)
-
-	return params[index]
+func GetParam(r *http.Request) []string {
+	return r.Context().Value(ContextKey{}).([]string)
 }

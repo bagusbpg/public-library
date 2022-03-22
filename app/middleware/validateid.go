@@ -9,12 +9,14 @@ import (
 
 func ValidateId(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		_, err := strconv.Atoi(GetParam(r, 0))
+		for i := range GetParam(r) {
+			_, err := strconv.Atoi(GetParam(r)[i])
 
-		if err != nil {
-			log.Println(err)
-			_model.CreateResponse(rw, http.StatusBadRequest, "invalid id", nil)
-			return
+			if err != nil {
+				log.Println(err)
+				_model.CreateResponse(rw, http.StatusBadRequest, "invalid id", nil)
+				return
+			}
 		}
 
 		handler.ServeHTTP(rw, r)

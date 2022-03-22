@@ -89,3 +89,12 @@ type Wish struct {
 	Category  string    `json:"category"`
 	CreatedAt time.Time `json:"created_at"`
 }
+
+type AllWish struct {
+	Id        uint      `json:"id"`
+	User      User      `json:"user"`
+	Title     string    `json:"title"`
+	Author    []Author  `json:"author"`
+	Category  string    `json:"category"`
+	CreatedAt time.Time `json:"created_at"`
+}

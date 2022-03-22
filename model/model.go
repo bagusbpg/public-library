@@ -93,6 +93,10 @@ type AddBookToFavoriteRequest struct {
 	BookId uint `json:"book_id"`
 }
 
+type AddBookToFavoriteResponse struct {
+	Favorite _entity.Favorite `json:"favorite"`
+}
+
 type RemoveBookFromFavoriteRequest struct {
 	BookId uint `json:"book_id"`
 }
@@ -102,7 +106,7 @@ type GetAllFavoritesResponse struct {
 	Favorites []_entity.Favorite `json:"favorites"`
 }
 
-type GetAllWishes struct {
+type GetWishesByUserIdResponse struct {
 	User   _entity.User   `json:"user"`
 	Wishes []_entity.Wish `json:"wishes"`
 }
@@ -111,4 +115,8 @@ type AddBookToWishlistRequest struct {
 	Title    string                `json:"title"`
 	Author   []CreateAuthorRequest `json:"authors"`
 	Category string                `json:"category"`
+}
+
+type AddBookToWishlistResponse struct {
+	Wish _entity.Wish `json:"wish"`
 }
