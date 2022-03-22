@@ -233,7 +233,23 @@ func (uuc UserUseCase) GetUserById(userId uint) (res _model.GetUserByIdResponse,
 	return
 }
 
-func (uuc UserUseCase) UpdateUser(req _model.UpdateUserRequest, user _entity.User) (res _model.UpdateUserResponse, code int, message string) {
+func (uuc UserUseCase) UpdateUser(req _model.UpdateUserRequest, userId uint) (res _model.UpdateUserResponse, code int, message string) {
+	// check user existence
+	user, err := uuc.repository.GetUserById(userId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// check if user does not exist
+	if user.Name == "" {
+		log.Println("user not found")
+		code, message = http.StatusNotFound, "user not found"
+		return
+	}
+
 	// prepare input string
 	name := strings.Title(strings.TrimSpace(req.Name))
 	email := strings.TrimSpace(req.Email)

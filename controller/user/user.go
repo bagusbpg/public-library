@@ -115,13 +115,6 @@ func (uc UserController) Update() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		userId, _ := strconv.Atoi(_mw.GetParam(r)[0])
 
-		existing, code, message := uc.usecase.GetUserById(uint(userId))
-
-		if code != http.StatusOK {
-			_model.CreateResponse(rw, code, message, nil)
-			return
-		}
-
 		body, err := ioutil.ReadAll(r.Body)
 
 		if err != nil {
@@ -140,7 +133,7 @@ func (uc UserController) Update() http.HandlerFunc {
 			return
 		}
 
-		res, code, message := uc.usecase.UpdateUser(req, existing.User)
+		res, code, message := uc.usecase.UpdateUser(req, uint(userId))
 
 		if code != http.StatusOK {
 			_model.CreateResponse(rw, code, message, nil)
