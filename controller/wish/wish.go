@@ -86,7 +86,7 @@ func (wc WishController) GetAllByUser() http.HandlerFunc {
 			_model.CreateResponse(rw, code, message, nil)
 		}
 
-		_model.CreateResponse(rw, code, message, res)
+		_model.CreateResponse(rw, code, message, res.Wishes)
 	}
 }
 

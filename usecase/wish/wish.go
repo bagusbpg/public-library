@@ -217,7 +217,7 @@ func (wuc WishUseCase) RemoveBookFromWishlist(userId uint, wishId uint) (code in
 		return
 	}
 
-	code, message = http.StatusOK, "success remove book from favorites"
+	code, message = http.StatusOK, "success remove book from wishlist"
 
 	return
 }

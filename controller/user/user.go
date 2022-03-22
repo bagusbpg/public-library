@@ -107,7 +107,7 @@ func (uc UserController) Get() http.HandlerFunc {
 
 		res.User.Password = ""
 
-		_model.CreateResponse(rw, code, message, res.User)
+		_model.CreateResponse(rw, code, message, res)
 	}
 }
 

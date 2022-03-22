@@ -19,6 +19,13 @@ func Authentication(handler http.Handler) http.Handler {
 			return
 		}
 
+		_, _, err := _helper.ExtractToken(token)
+
+		if err != nil {
+			_model.CreateResponse(rw, http.StatusBadRequest, err.Error(), nil)
+			return
+		}
+
 		handler.ServeHTTP(rw, r)
 	})
 }
@@ -52,7 +59,7 @@ func MemberOnlyAuthorization(handler http.Handler) http.Handler {
 			return
 		}
 
-		if role != "member" {
+		if role != "Member" {
 			log.Println("forbidden")
 			_model.CreateResponse(rw, http.StatusForbidden, "forbidden", nil)
 			return

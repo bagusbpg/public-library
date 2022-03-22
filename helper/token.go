@@ -3,6 +3,7 @@ package helper
 import (
 	"errors"
 	"log"
+	"strings"
 	"time"
 
 	_config "plain-go/public-library/app/config"
@@ -52,6 +53,7 @@ func ExtractToken(tokenString string) (id int, role string, err error) {
 	})
 
 	if err != nil {
+		err = errors.New(strings.ToLower(err.Error()))
 		log.Println(err)
 		return
 	}

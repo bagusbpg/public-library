@@ -561,7 +561,7 @@ func (br *BookRepository) AddBookToWishlist(userId uint, newWish _entity.Wish) (
 	// prepare statement before execution
 	stmt, err := br.db.Prepare(`
 		INSERT INTO wishlists (user_id, title, category, note, created_at, updated_at)
-		VALUES (?, ?, ?, ?)
+		VALUES (?, ?, ?, ?, ?, ?)
 	`)
 
 	if err != nil {
@@ -598,7 +598,7 @@ func (br *BookRepository) RemoveBookFromWishlist(wishId uint) (err error) {
 	stmt, err := br.db.Prepare(`
 		UPDATE wishlists
 		SET deleted_at = ?
-		WHERE wish_id = ?
+		WHERE id = ?
 	`)
 
 	if err != nil {
@@ -779,7 +779,7 @@ func (br *BookRepository) UpdateWish(updatedWish _entity.Wish) (wish _entity.Wis
 	defer stmt.Close()
 
 	// execute statement
-	_, err = stmt.Exec(updatedWish.Title, updatedWish.Category, updatedWish.Note, updatedWish.UpdatedAt)
+	_, err = stmt.Exec(updatedWish.Title, updatedWish.Category, updatedWish.Note, updatedWish.UpdatedAt, updatedWish.Id)
 
 	if err != nil {
 		log.Println(err)

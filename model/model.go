@@ -113,7 +113,7 @@ type GetWishesByUserIdResponse struct {
 
 type AddBookToWishlistRequest struct {
 	Title    string                `json:"title"`
-	Author   []CreateAuthorRequest `json:"authors"`
+	Author   []CreateAuthorRequest `json:"author"`
 	Category string                `json:"category"`
 	Note     string                `json:"note"`
 }
