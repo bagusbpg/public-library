@@ -89,3 +89,37 @@ func (wc WishController) GetAllByUser() http.HandlerFunc {
 		_model.CreateResponse(rw, code, message, res)
 	}
 }
+
+func (wc WishController) Update() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		userId, _ := strconv.Atoi(_mw.GetParam(r)[0])
+		wishId, _ := strconv.Atoi(_mw.GetParam(r)[1])
+
+		body, err := ioutil.ReadAll(r.Body)
+
+		if err != nil {
+			log.Println(err)
+			_model.CreateResponse(rw, http.StatusInternalServerError, "failed to read request body", nil)
+			return
+		}
+
+		defer r.Body.Close()
+
+		req := _model.UpdateWishRequest{}
+
+		if err = json.Unmarshal(body, &req); err != nil {
+			log.Println(err)
+			_model.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
+			return
+		}
+
+		res, code, message := wc.usecase.UpdateWish(req, uint(userId), uint(wishId))
+
+		if code != http.StatusOK {
+			_model.CreateResponse(rw, code, message, nil)
+			return
+		}
+
+		_model.CreateResponse(rw, code, message, res)
+	}
+}

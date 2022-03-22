@@ -82,13 +82,6 @@ func (bc BookController) Update() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		bookId, _ := strconv.Atoi(_mw.GetParam(r)[0])
 
-		existing, code, message := bc.usecase.GetBookById(uint(bookId))
-
-		if code != http.StatusOK {
-			_model.CreateResponse(rw, code, message, nil)
-			return
-		}
-
 		body, err := ioutil.ReadAll(r.Body)
 
 		if err != nil {
@@ -107,7 +100,7 @@ func (bc BookController) Update() http.HandlerFunc {
 			return
 		}
 
-		res, code, message := bc.usecase.UpdateBook(req, existing.Book)
+		res, code, message := bc.usecase.UpdateBook(req, uint(bookId))
 
 		if code != http.StatusOK {
 			_model.CreateResponse(rw, code, message, nil)

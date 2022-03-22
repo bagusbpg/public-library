@@ -52,6 +52,7 @@ func Router(
 		NewRoute(http.MethodGet, "/wishes", _mw.Do(_mw.Authentication, _mw.LibrarianOnlyAuthorization).Then(wish.GetAll()).ServeHTTP),
 		NewRoute(http.MethodPost, "/wishes/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.JSONRequest).Then(wish.AddBook()).ServeHTTP),
 		NewRoute(http.MethodGet, "/wishes/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.MemberOnlyAuthorization).Then(wish.GetAllByUser()).ServeHTTP),
+		NewRoute(http.MethodPut, "/wishes/(.+)/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.MemberOnlyAuthorization).Then(wish.Update()).ServeHTTP),
 		NewRoute(http.MethodDelete, "/wishes/(.+)/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.MemberOnlyAuthorization).Then(wish.RemoveBook()).ServeHTTP),
 	}
 

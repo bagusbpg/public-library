@@ -9,4 +9,5 @@ type Wish interface {
 	RemoveBookFromWishlist(userId uint, wishId uint) (code int, message string)
 	GetAllWishes() (res []_model.GetWishesByUserIdResponse, code int, message string)
 	GetAllWishesByUserId(userId uint) (res _model.GetWishesByUserIdResponse, code int, message string)
+	UpdateWish(req _model.UpdateWishRequest, userId uint, wishId uint) (res _model.UpdateWishResponse, code int, message string)
 }

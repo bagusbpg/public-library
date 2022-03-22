@@ -87,7 +87,9 @@ type Wish struct {
 	Title     string    `json:"title"`
 	Author    []Author  `json:"author"`
 	Category  string    `json:"category"`
+	Note      string    `json:"note"`
 	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type AllWish struct {
@@ -97,4 +99,5 @@ type AllWish struct {
 	Author    []Author  `json:"author"`
 	Category  string    `json:"category"`
 	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }

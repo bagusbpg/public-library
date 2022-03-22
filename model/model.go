@@ -115,8 +115,20 @@ type AddBookToWishlistRequest struct {
 	Title    string                `json:"title"`
 	Author   []CreateAuthorRequest `json:"authors"`
 	Category string                `json:"category"`
+	Note     string                `json:"note"`
 }
 
 type AddBookToWishlistResponse struct {
+	Wish _entity.Wish `json:"wish"`
+}
+
+type UpdateWishRequest struct {
+	Title    string                `json:"title"`
+	Author   []CreateAuthorRequest `json:"authors"`
+	Category string                `json:"category"`
+	Note     string                `json:"note"`
+}
+
+type UpdateWishResponse struct {
 	Wish _entity.Wish `json:"wish"`
 }

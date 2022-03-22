@@ -253,7 +253,23 @@ func (buc BookUseCase) GetBookById(bookId uint) (res _model.GetBookByIdResponse,
 	return
 }
 
-func (buc BookUseCase) UpdateBook(req _model.UpdateBookRequest, book _entity.Book) (res _model.UpdateBookResponse, code int, message string) {
+func (buc BookUseCase) UpdateBook(req _model.UpdateBookRequest, bookId uint) (res _model.UpdateBookResponse, code int, message string) {
+	// check book existence
+	book, err := buc.repository.GetBookById(bookId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// check if book does not exist
+	if book.Title == "" {
+		log.Println("book not found")
+		code, message = http.StatusNotFound, "book not found"
+		return
+	}
+
 	// prepare input string
 	title := strings.Title(strings.TrimSpace(req.Title))
 	publisher := strings.TrimSpace(req.Publisher)
