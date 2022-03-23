@@ -844,22 +844,163 @@ func (br *BookRepository) DeleteWishAuthorJunction(wish _entity.Wish, author _en
 	return
 }
 
-func (br *BookRepository) CreateBookReview(newReview _entity.Review) (review _entity.Review, err error) {
+func (br *BookRepository) CreateReview(userId uint, bookId uint, newReview _entity.Review) (review _entity.Review, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		INSERT INTO reviews (user_id, book_id, star, content, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	res, err := stmt.Exec(userId, bookId, newReview.Star, newReview.Content, newReview.CreatedAt, newReview.UpdatedAt)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	// get new book id
+	id, err := res.LastInsertId()
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	review = newReview
+	review.Id = uint(id)
+
 	return
 }
 
-func (br *BookRepository) UpdateBookReview(newReview _entity.Review) (review _entity.Review, err error) {
+func (br *BookRepository) GetAllReviewsByBookId(bookId uint) (reviews []_entity.Review, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		SELECT id, user_id, star, content, created_at, updated_at
+		FROM reviews
+		WHERE book_id = ?
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	row, err := stmt.Query(bookId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	for row.Next() {
+		review := _entity.Review{}
+
+		if err = row.Scan(&review.Id, &review.User.Id, &review.Star, &review.Content, &review.CreatedAt, &review.UpdatedAt); err != nil {
+			log.Println(err)
+			return
+		}
+
+		reviews = append(reviews, review)
+	}
+
 	return
 }
 
-func (br *BookRepository) GetBookReviewByBookId(newReview _entity.Review) (review _entity.Review, err error) {
+func (br *BookRepository) GetReviewByReviewId(reviewId uint) (review _entity.Review, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		SELECT id, star, content, created_at, updated_at
+		FROM reviews
+		WHERE id = ?
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	row, err := stmt.Query(reviewId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	if row.Next() {
+		if err = row.Scan(&review.Id, &review.Star, &review.Content, &review.CreatedAt, &review.UpdatedAt); err != nil {
+			log.Println(err)
+			return
+		}
+	}
+
 	return
 }
 
-func (br *BookRepository) GetBookReviewByReviewId(newReview _entity.Review) (review _entity.Review, err error) {
+func (br *BookRepository) UpdateReview(updatedReview _entity.Review) (review _entity.Review, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		UPDATE reviews
+		SET star = ?, content = ?, updated_at = ?
+		WHERE id = ?
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec(updatedReview.Star, updatedReview.Content, updatedReview.UpdatedAt, updatedReview.Id)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	review = updatedReview
+
 	return
 }
 
-func (br *BookRepository) DeleteBookReview(newReview _entity.Review) (review _entity.Review, err error) {
+func (br *BookRepository) DeleteReview(reviewId uint) (err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		UPDATE reviews
+		SET deleted_at = ?
+		WHERE id = ?
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	_, err = stmt.Exec(reviewId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
 	return
 }

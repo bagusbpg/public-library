@@ -132,3 +132,13 @@ type UpdateWishRequest struct {
 type UpdateWishResponse struct {
 	Wish _entity.Wish `json:"wish"`
 }
+
+type CreateReviewRequest struct {
+	Star    uint   `json:"star"`
+	Content string `json:"content"`
+}
+
+type CreateReviewResponse struct {
+	Book   _entity.Book   `json:"book"`
+	Review _entity.Review `json:"review"`
+}

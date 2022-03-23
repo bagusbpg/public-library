@@ -45,9 +45,8 @@ type BookStatus struct {
 }
 
 type Review struct {
-	Id        uint
-	User      User
-	Book      Book
+	Id        uint      `json:"id"`
+	User      User      `json:"user"`
 	Star      uint      `json:"star"`
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`

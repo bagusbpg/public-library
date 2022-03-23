@@ -30,4 +30,9 @@ type Book interface {
 	GetWishAuthors(wishId uint) (authors []_entity.Author, err error)
 	UpdateWish(updatedWish _entity.Wish) (wish _entity.Wish, err error)
 	DeleteWishAuthorJunction(wish _entity.Wish, author _entity.Author) (err error)
+	CreateReview(userId uint, bookId uint, newReview _entity.Review) (review _entity.Review, err error)
+	GetAllReviewsByBookId(bookId uint) (reviews []_entity.Review, err error)
+	GetReviewByReviewId(reviewId uint) (review _entity.Review, err error)
+	UpdateReview(updatedReview _entity.Review) (review _entity.Review, err error)
+	DeleteReview(reviewId uint) (err error)
 }

@@ -55,6 +55,10 @@ func Router(
 		NewRoute(http.MethodGet, "/wishes/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.MemberOnlyAuthorization).Then(wish.GetAllByUser()).ServeHTTP),
 		NewRoute(http.MethodPut, "/wishes/(.+)/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.MemberOnlyAuthorization).Then(wish.Update()).ServeHTTP),
 		NewRoute(http.MethodDelete, "/wishes/(.+)/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.MemberOnlyAuthorization).Then(wish.RemoveBook()).ServeHTTP),
+		// NewRoute(http.MethodGet, "/reviews", _mw.Do(_mw.Authentication, _mw.LibrarianOnlyAuthorization).Then(review.GetAll()).ServeHTTP),
+		// NewRoute(http.MethodPost, "/reviews/(.+)", _mw.Do(_mw.JSONRequest, _mw.ValidateId, _mw.Authentication).Then(review.Create()).ServeHTTP),
+		// NewRoute(http.MethodGet, "/reviews/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication).Then(review.Get()).ServeHTTP),
+		// NewRoute(http.MethodPut, "/reviews/(.+)", _mw.Do(_mw.ValidateId, _mw.JSONRequest, _mw.Authentication))
 	}
 
 	return func(rw http.ResponseWriter, r *http.Request) {
