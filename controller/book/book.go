@@ -110,3 +110,13 @@ func (bc BookController) Update() http.HandlerFunc {
 		_model.CreateResponse(rw, code, message, res)
 	}
 }
+
+func (bc BookController) Delete() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		bookId, _ := strconv.Atoi(_mw.GetParam(r)[0])
+
+		code, message := bc.usecase.DeleteBook(uint(bookId))
+
+		_model.CreateResponse(rw, code, message, nil)
+	}
+}

@@ -9,4 +9,5 @@ type Book interface {
 	GetAllBooks() (res _model.GetAllBooksResponse, code int, message string)
 	GetBookById(bookId uint) (res _model.GetBookByIdResponse, code int, message string)
 	UpdateBook(req _model.UpdateBookRequest, bookId uint) (res _model.UpdateBookResponse, code int, message string)
+	DeleteBook(bookId uint) (code int, message string)
 }

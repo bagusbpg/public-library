@@ -439,3 +439,33 @@ func (buc BookUseCase) UpdateBook(req _model.UpdateBookRequest, bookId uint) (re
 
 	return
 }
+
+func (buc BookUseCase) DeleteBook(bookId uint) (code int, message string) {
+	// check book existence
+	book, err := buc.repository.GetBookById(bookId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// check if book does not exist
+	if book.Title == "" {
+		log.Println("book not found")
+		code, message = http.StatusNotFound, "book not found"
+		return
+	}
+
+	// calling repository
+	err = buc.repository.DeleteBook(bookId)
+
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	code, message = http.StatusOK, "success delete book"
+
+	return
+}

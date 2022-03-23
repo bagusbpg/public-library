@@ -453,6 +453,32 @@ func (br *BookRepository) DeleteBookAuthorJunction(book _entity.Book, author _en
 	return
 }
 
+func (br *BookRepository) DeleteBook(bookId uint) (err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		UPDATE books
+		SET deleted_at = ?
+		WHERE id = ?
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	_, err = stmt.Exec(time.Now(), bookId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	return
+}
+
 func (br *BookRepository) AddBookToFavorite(userId uint, bookId uint) (favorite _entity.Favorite, err error) {
 	// prepare statement
 	stmt, err := br.db.Prepare(`
@@ -815,5 +841,25 @@ func (br *BookRepository) DeleteWishAuthorJunction(wish _entity.Wish, author _en
 		return
 	}
 
+	return
+}
+
+func (br *BookRepository) CreateBookReview(newReview _entity.Review) (review _entity.Review, err error) {
+	return
+}
+
+func (br *BookRepository) UpdateBookReview(newReview _entity.Review) (review _entity.Review, err error) {
+	return
+}
+
+func (br *BookRepository) GetBookReviewByBookId(newReview _entity.Review) (review _entity.Review, err error) {
+	return
+}
+
+func (br *BookRepository) GetBookReviewByReviewId(newReview _entity.Review) (review _entity.Review, err error) {
+	return
+}
+
+func (br *BookRepository) DeleteBookReview(newReview _entity.Review) (review _entity.Review, err error) {
 	return
 }
