@@ -106,6 +106,10 @@ type GetAllFavoritesResponse struct {
 	Favorites []_entity.Favorite `json:"favorites"`
 }
 
+type GetAllWishes struct {
+	Wishes []_entity.AllWish `json:"wishes"`
+}
+
 type GetWishesByUserIdResponse struct {
 	User   _entity.User   `json:"user"`
 	Wishes []_entity.Wish `json:"wishes"`
@@ -138,7 +142,28 @@ type CreateReviewRequest struct {
 	Content string `json:"content"`
 }
 
+type GetAllReviewsResponse struct {
+	Reviews []_entity.AllReview `json:"reviews"`
+}
+
+type GetReviewByReviewIdResponse struct {
+	Review _entity.AllReview `json:"review"`
+}
+
+type GetAllReviewsByBookIdResponse struct {
+	Book    _entity.Book     `json:"book"`
+	Reviews []_entity.Review `json:"reviews"`
+}
+
 type CreateReviewResponse struct {
-	Book   _entity.Book   `json:"book"`
-	Review _entity.Review `json:"review"`
+	Review _entity.AllReview `json:"review"`
+}
+
+type UpdateReviewRequest struct {
+	Star    uint   `json:"star"`
+	Content string `json:"content"`
+}
+
+type UpdateReviewResponse struct {
+	Review _entity.AllReview `json:"review"`
 }

@@ -80,11 +80,11 @@ func (fc FavoriteController) RemoveBook() http.HandlerFunc {
 	}
 }
 
-func (fc FavoriteController) GetAll() http.HandlerFunc {
+func (fc FavoriteController) GetAllByUserId() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		userId, _ := strconv.Atoi(_mw.GetParam(r)[0])
 
-		res, code, message := fc.usecase.GetAllFavorites(uint(userId))
+		res, code, message := fc.usecase.GetAllFavoritesByUserId(uint(userId))
 
 		if code != http.StatusOK {
 			_model.CreateResponse(rw, code, message, nil)

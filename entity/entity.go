@@ -14,18 +14,20 @@ type User struct {
 }
 
 type Book struct {
-	Id          uint      `json:"id"`
-	Title       string    `json:"title"`
-	Author      []Author  `json:"author"`
-	Publisher   string    `json:"publisher"`
-	Language    string    `json:"language"`
-	Pages       uint      `json:"pages"`
-	Category    string    `json:"category"`
-	ISBN13      string    `json:"isbn13"`
-	Description string    `json:"description"`
-	Quantity    uint      `json:"quantity"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	Id            uint        `json:"id"`
+	Title         string      `json:"title"`
+	Author        []Author    `json:"author"`
+	Publisher     string      `json:"publisher"`
+	Language      string      `json:"language"`
+	Pages         uint        `json:"pages"`
+	Category      string      `json:"category"`
+	ISBN13        string      `json:"isbn13"`
+	Description   string      `json:"description"`
+	Quantity      uint        `json:"quantity"`
+	FavoriteCount uint        `json:"favorite_count"`
+	AverageStar   interface{} `json:"average_star"`
+	CreatedAt     time.Time   `json:"created_at"`
+	UpdatedAt     time.Time   `json:"updated_at"`
 }
 
 type BookItem struct {
@@ -46,9 +48,20 @@ type BookStatus struct {
 
 type Review struct {
 	Id        uint      `json:"id"`
-	User      User      `json:"user"`
+	User      User      `json:"reviewer"`
 	Star      uint      `json:"star"`
 	Content   string    `json:"content"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type AllReview struct {
+	Id        uint      `json:"id"`
+	User      User      `json:"reviewer"`
+	Book      Book      `json:"book_reviewed"`
+	Star      uint      `json:"star"`
+	Content   string    `json:"content"`
+	Flag      string    `json:"flag"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -97,6 +110,7 @@ type AllWish struct {
 	Title     string    `json:"title"`
 	Author    []Author  `json:"author"`
 	Category  string    `json:"category"`
+	Note      string    `json:"note"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

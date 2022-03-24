@@ -222,9 +222,9 @@ func (wuc WishUseCase) RemoveBookFromWishlist(userId uint, wishId uint) (code in
 	return
 }
 
-func (wuc WishUseCase) GetAllWishes() (res []_model.GetWishesByUserIdResponse, code int, message string) {
-	// get all users
-	users, err := wuc.userRepo.GetAllUsers()
+func (wuc WishUseCase) GetAllWishes() (res _model.GetAllWishes, code int, message string) {
+	// calling repository
+	wishes, err := wuc.bookRepo.GetAllWishes()
 
 	// detect failure in repository
 	if err != nil {
@@ -232,9 +232,9 @@ func (wuc WishUseCase) GetAllWishes() (res []_model.GetWishesByUserIdResponse, c
 		return
 	}
 
-	for _, user := range users {
-		// get wishes of each user
-		wishes, err := wuc.bookRepo.GetWishesByUserId(user.Id)
+	for _, wish := range wishes {
+		// getting each book's authors
+		authors, err := wuc.bookRepo.GetWishAuthors(wish.Id)
 
 		// detect failure in repository
 		if err != nil {
@@ -242,30 +242,15 @@ func (wuc WishUseCase) GetAllWishes() (res []_model.GetWishesByUserIdResponse, c
 			return
 		}
 
-		for _, wish := range wishes {
-			// getting each book's authors
-			authors, err := wuc.bookRepo.GetWishAuthors(wish.Id)
-
-			// detect failure in repository
-			if err != nil {
-				code, message = http.StatusInternalServerError, "internal server error"
-				return
-			}
-
-			wish.Author = authors
-			wish.CreatedAt, _ = _helper.TimeFormatter(wish.CreatedAt)
-			wish.UpdatedAt, _ = _helper.TimeFormatter(wish.UpdatedAt)
-		}
-
-		if len(wishes) != 0 {
-			// formatting response
-			user.Password = ""
-			user.CreatedAt, _ = _helper.TimeFormatter(user.CreatedAt)
-			user.UpdatedAt, _ = _helper.TimeFormatter(user.UpdatedAt)
-			res = append(res, _model.GetWishesByUserIdResponse{User: user, Wishes: wishes})
-		}
+		wish.Author = authors
+		wish.User.Password = ""
+		wish.User.CreatedAt, _ = _helper.TimeFormatter(wish.User.CreatedAt)
+		wish.User.UpdatedAt, _ = _helper.TimeFormatter(wish.User.UpdatedAt)
+		wish.CreatedAt, _ = _helper.TimeFormatter(wish.CreatedAt)
+		wish.UpdatedAt, _ = _helper.TimeFormatter(wish.UpdatedAt)
 	}
 
+	res.Wishes = wishes
 	code, message = http.StatusOK, "success get all wishes"
 
 	return

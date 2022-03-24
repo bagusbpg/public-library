@@ -21,6 +21,49 @@ func New(book _bookRepository.Book, user _userRepository.User) *ReviewUseCase {
 	return &ReviewUseCase{bookRepo: book, userRepo: user}
 }
 
+func (ruc ReviewUseCase) GetAllReviews() (res _model.GetAllReviewsResponse, code int, message string) {
+	// calling repository
+	reviews, err := ruc.bookRepo.GetAllReviews()
+
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	for _, review := range reviews {
+		// get user detail
+		user, err := ruc.userRepo.GetUserById(review.User.Id)
+
+		if err != nil {
+			code, message = http.StatusInternalServerError, "internal server error"
+			return
+		}
+
+		// get book detail
+		book, err := ruc.bookRepo.GetBookById(review.Book.Id)
+
+		if err != nil {
+			code, message = http.StatusInternalServerError, "internal server error"
+			return
+		}
+
+		// formatting response
+		user.Password = ""
+		user.CreatedAt, _ = _helper.TimeFormatter(user.CreatedAt)
+		user.UpdatedAt, _ = _helper.TimeFormatter(user.UpdatedAt)
+		book.CreatedAt, _ = _helper.TimeFormatter(book.CreatedAt)
+		book.UpdatedAt, _ = _helper.TimeFormatter(book.UpdatedAt)
+		review.User = user
+		review.Book = book
+		res.Reviews = append(res.Reviews, review)
+	}
+
+	res.Reviews = reviews
+	code, message = http.StatusOK, "success get all reviews"
+
+	return
+}
+
 func (ruc ReviewUseCase) CreateReview(userId uint, bookId uint, req _model.CreateReviewRequest) (res _model.CreateReviewResponse, code int, message string) {
 	// prepare input string
 	content := strings.TrimSpace(req.Content)
@@ -40,9 +83,9 @@ func (ruc ReviewUseCase) CreateReview(userId uint, bookId uint, req _model.Creat
 	}
 
 	// check if star is out of range
-	if req.Star > 5 {
+	if req.Star < 1 || req.Star > 5 {
 		log.Println("star out of range")
-		code, message = http.StatusBadRequest, "star cannot be greater than 5"
+		code, message = http.StatusBadRequest, "star must be from 1 to 5"
 		return
 	}
 
@@ -98,14 +141,16 @@ func (ruc ReviewUseCase) CreateReview(userId uint, bookId uint, req _model.Creat
 
 	// prepare input to repository
 	now := time.Now()
-	newReview := _entity.Review{}
+	newReview := _entity.AllReview{}
+	newReview.User.Id = userId
+	newReview.Book.Id = bookId
 	newReview.Content = content
 	newReview.Star = req.Star
 	newReview.CreatedAt = now
 	newReview.UpdatedAt = now
 
 	// calling repository
-	res.Review, err = ruc.bookRepo.CreateReview(userId, bookId, newReview)
+	res.Review, err = ruc.bookRepo.CreateReview(newReview)
 
 	// detect failure in repository
 	if err != nil {
@@ -114,9 +159,9 @@ func (ruc ReviewUseCase) CreateReview(userId uint, bookId uint, req _model.Creat
 	}
 
 	// formatting response
-	res.Book = book
-	res.Book.CreatedAt, _ = _helper.TimeFormatter(res.Book.CreatedAt)
-	res.Book.UpdatedAt, _ = _helper.TimeFormatter(res.Book.UpdatedAt)
+	res.Review.Book = book
+	res.Review.Book.CreatedAt, _ = _helper.TimeFormatter(res.Review.Book.CreatedAt)
+	res.Review.Book.UpdatedAt, _ = _helper.TimeFormatter(res.Review.Book.UpdatedAt)
 	res.Review.User = user
 	res.Review.User.CreatedAt, _ = _helper.TimeFormatter(res.Review.User.CreatedAt)
 	res.Review.User.UpdatedAt, _ = _helper.TimeFormatter(res.Review.User.UpdatedAt)
@@ -127,6 +172,218 @@ func (ruc ReviewUseCase) CreateReview(userId uint, bookId uint, req _model.Creat
 	return
 }
 
-func (ruc ReviewUseCase) UpdateReview() {
+func (ruc ReviewUseCase) GetReviewByReviewId(reviewId uint) (res _model.GetReviewByReviewIdResponse, code int, message string) {
+	// calling repository
+	review, err := ruc.bookRepo.GetReviewByReviewId(reviewId)
 
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// get reviewer
+	review.User, err = ruc.userRepo.GetUserById(review.User.Id)
+
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// get book reviewed
+	review.Book, err = ruc.bookRepo.GetBookById(review.Book.Id)
+
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// formatting response
+	res.Review = review
+	res.Review.CreatedAt, _ = _helper.TimeFormatter(res.Review.CreatedAt)
+	res.Review.User.Password = ""
+	res.Review.User.CreatedAt, _ = _helper.TimeFormatter(res.Review.User.CreatedAt)
+	res.Review.User.UpdatedAt, _ = _helper.TimeFormatter(res.Review.User.UpdatedAt)
+	res.Review.Book.CreatedAt, _ = _helper.TimeFormatter(res.Review.Book.CreatedAt)
+	res.Review.Book.UpdatedAt, _ = _helper.TimeFormatter(res.Review.Book.UpdatedAt)
+	code, message = http.StatusOK, "success get review by review id"
+
+	return
+}
+
+func (ruc ReviewUseCase) GetAllReviewsByBookId(bookId uint) (res _model.GetAllReviewsByBookIdResponse, code int, message string) {
+	// check book existence
+	book, err := ruc.bookRepo.GetBookById(bookId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// check if book does not exist
+	if book.Title == "" {
+		log.Println("book not found")
+		code, message = http.StatusNotFound, "book not found"
+		return
+	}
+
+	// calling repository
+	reviews, err := ruc.bookRepo.GetAllReviewsByBookId(bookId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	for _, review := range reviews {
+		// get reviewer
+		review.User, err = ruc.userRepo.GetUserById(review.User.Id)
+
+		if err != nil {
+			code, message = http.StatusInternalServerError, "internal server error"
+			return
+		}
+
+		review.User.Password = ""
+		review.User.CreatedAt, _ = _helper.TimeFormatter(review.User.CreatedAt)
+		review.User.UpdatedAt, _ = _helper.TimeFormatter(review.User.UpdatedAt)
+		review.CreatedAt, _ = _helper.TimeFormatter(review.CreatedAt)
+		review.UpdatedAt, _ = _helper.TimeFormatter(review.UpdatedAt)
+	}
+
+	res.Reviews = reviews
+	res.Book = book
+	code, message = http.StatusOK, "success get all reviews"
+
+	return
+}
+
+func (ruc ReviewUseCase) UpdateReview(userId uint, reviewId uint, req _model.UpdateReviewRequest) (res _model.UpdateReviewResponse, code int, message string) {
+	// get reviewer
+	user, err := ruc.userRepo.GetUserById(userId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// check review existence
+	review, err := ruc.bookRepo.GetReviewByReviewId(reviewId)
+
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	if review.Content == "" {
+		log.Println("review not found")
+		code, message = http.StatusNotFound, "review not found"
+		return
+	}
+
+	// check if user id not match
+	if review.User.Id != userId {
+		log.Println("forbidden")
+		code, message = http.StatusForbidden, "forbidden"
+		return
+	}
+
+	// prepare input string
+	content := strings.TrimSpace(req.Content)
+
+	flag := true
+
+	if strings.Contains(strings.ReplaceAll(content, " ", ""), ";--") {
+		log.Println("forbidden character")
+		code, message = http.StatusBadRequest, "forbidden chacarter"
+		return
+	}
+
+	if content != "" && content != review.Content {
+		review.Content = content
+		flag = false
+	}
+
+	// if req.Star = 0, it means no change
+	if req.Star > 5 {
+		log.Println("star out of range")
+		code, message = http.StatusBadRequest, "star must be from 1 to 5"
+		return
+	}
+
+	if req.Star != 0 && req.Star != review.Star {
+		review.Star = req.Star
+		flag = false
+	}
+
+	if flag {
+		log.Println("no update was performed")
+		code, message = http.StatusBadRequest, "no update was performed"
+		return
+	}
+
+	// calling repository
+	res.Review, err = ruc.bookRepo.UpdateReview(review)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// get book
+	res.Review.Book, err = ruc.bookRepo.GetBookById(res.Review.Book.Id)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// formatting response
+	user.Password = ""
+	user.CreatedAt, _ = _helper.TimeFormatter(user.CreatedAt)
+	user.UpdatedAt, _ = _helper.TimeFormatter(user.UpdatedAt)
+	res.Review.User = user
+	res.Review.Book.CreatedAt, _ = _helper.TimeFormatter(res.Review.Book.CreatedAt)
+	res.Review.Book.UpdatedAt, _ = _helper.TimeFormatter(res.Review.Book.UpdatedAt)
+	res.Review.CreatedAt, _ = _helper.TimeFormatter(res.Review.CreatedAt)
+	res.Review.UpdatedAt, _ = _helper.TimeFormatter(res.Review.UpdatedAt)
+
+	return
+}
+
+func (ruc ReviewUseCase) DeleteReview(userId uint, reviewId uint) (code int, message string) {
+	// check review existence
+	review, err := ruc.bookRepo.GetReviewByReviewId(reviewId)
+
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	if review.Content == "" {
+		log.Println("review not found")
+		code, message = http.StatusNotFound, "review not found"
+		return
+	}
+
+	// check if user id not match
+	if review.User.Id != userId {
+		log.Println("forbidden")
+		code, message = http.StatusForbidden, "forbidden"
+		return
+	}
+
+	if err = ruc.bookRepo.DeleteReview(reviewId); err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	code, message = http.StatusOK, "success delete review"
+
+	return
 }

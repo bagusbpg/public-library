@@ -543,7 +543,7 @@ func (br *BookRepository) RemoveBookFromFavorite(userId uint, bookId uint) (err 
 	return
 }
 
-func (br *BookRepository) GetAllFavorites(userId uint) (favorites []_entity.Favorite, err error) {
+func (br *BookRepository) GetAllFavoritesByUserId(userId uint) (favorites []_entity.Favorite, err error) {
 	// prepare statement before execution
 	stmt, err := br.db.Prepare(`
 		SELECT id, book_id, created_at
@@ -578,6 +578,80 @@ func (br *BookRepository) GetAllFavorites(userId uint) (favorites []_entity.Favo
 		}
 
 		favorites = append(favorites, favorite)
+	}
+
+	return
+}
+
+func (br *BookRepository) CountFavoritesByBookId(bookId uint) (count uint, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		SELECT COUNT(id)
+		FROM favorites
+		WHERE book_id = ?
+		GROUP BY book_id
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query(bookId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	if row.Next() {
+		if err = row.Scan(&count); err != nil {
+			log.Println(err)
+			return
+		}
+	}
+
+	return
+}
+
+func (br *BookRepository) GetAllWishes() (wishes []_entity.AllWish, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		SELECT id, user_id, title, category, note, created_at, updated_at
+		FROM wishlistst
+		WHERE deleted_at IS NULL
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	row, err := stmt.Query()
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	for row.Next() {
+		wish := _entity.AllWish{}
+
+		if err = row.Scan(&wish.Id, &wish.User.Id, &wish.Title, &wish.Category, &wish.Note, &wish.CreatedAt, &wish.UpdatedAt); err != nil {
+			log.Println(err)
+			return
+		}
+
+		wishes = append(wishes, wish)
 	}
 
 	return
@@ -844,10 +918,49 @@ func (br *BookRepository) DeleteWishAuthorJunction(wish _entity.Wish, author _en
 	return
 }
 
-func (br *BookRepository) CreateReview(userId uint, bookId uint, newReview _entity.Review) (review _entity.Review, err error) {
+func (br *BookRepository) GetAllReviews() (reviews []_entity.AllReview, err error) {
+	// prepare statment before execution
+	stmt, err := br.db.Prepare(`
+		SELECT id, user_id, book_id, star, content, flag, created_at, updated_at
+		FROM reviews
+		WHERE deleted_at IS NULL
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query()
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	for row.Next() {
+		review := _entity.AllReview{}
+
+		if err = row.Scan(&review.Id, &review.User.Id, &review.Book.Id, &review.Star, &review.Content, &review.Flag, &review.CreatedAt, &review.UpdatedAt); err != nil {
+			log.Println(err)
+			return
+		}
+
+		reviews = append(reviews, review)
+	}
+
+	return
+}
+
+func (br *BookRepository) CreateReview(newReview _entity.AllReview) (review _entity.AllReview, err error) {
 	// prepare statement before execution
 	stmt, err := br.db.Prepare(`
-		INSERT INTO reviews (user_id, book_id, star, content, created_at, updated_at)
+		INSERT INTO reviews (user_id, book_id, star, content, flag, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?)
 	`)
 
@@ -859,7 +972,8 @@ func (br *BookRepository) CreateReview(userId uint, bookId uint, newReview _enti
 	defer stmt.Close()
 
 	// execute statement
-	res, err := stmt.Exec(userId, bookId, newReview.Star, newReview.Content, newReview.CreatedAt, newReview.UpdatedAt)
+	flag := "unread"
+	res, err := stmt.Exec(newReview.User.Id, newReview.Book.Id, newReview.Star, newReview.Content, flag, newReview.CreatedAt, newReview.UpdatedAt)
 
 	if err != nil {
 		log.Println(err)
@@ -876,6 +990,41 @@ func (br *BookRepository) CreateReview(userId uint, bookId uint, newReview _enti
 
 	review = newReview
 	review.Id = uint(id)
+
+	return
+}
+
+func (br *BookRepository) GetReviewByReviewId(reviewId uint) (review _entity.AllReview, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		SELECT id, user_id, book_id, star, content, created_at, updated_at
+		FROM reviews
+		WHERE id = ?
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query(reviewId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	if row.Next() {
+		if err = row.Scan(&review.Id, &review.User.Id, &review.Book.Id, &review.Star, &review.Content, &review.CreatedAt, &review.UpdatedAt); err != nil {
+			log.Println(err)
+			return
+		}
+	}
 
 	return
 }
@@ -918,46 +1067,13 @@ func (br *BookRepository) GetAllReviewsByBookId(bookId uint) (reviews []_entity.
 	return
 }
 
-func (br *BookRepository) GetReviewByReviewId(reviewId uint) (review _entity.Review, err error) {
-	// prepare statement before execution
-	stmt, err := br.db.Prepare(`
-		SELECT id, star, content, created_at, updated_at
-		FROM reviews
-		WHERE id = ?
-	`)
-
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	defer stmt.Close()
-
-	row, err := stmt.Query(reviewId)
-
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	defer row.Close()
-
-	if row.Next() {
-		if err = row.Scan(&review.Id, &review.Star, &review.Content, &review.CreatedAt, &review.UpdatedAt); err != nil {
-			log.Println(err)
-			return
-		}
-	}
-
-	return
-}
-
-func (br *BookRepository) UpdateReview(updatedReview _entity.Review) (review _entity.Review, err error) {
+func (br *BookRepository) UpdateReview(updatedReview _entity.AllReview) (review _entity.AllReview, err error) {
 	// prepare statement before execution
 	stmt, err := br.db.Prepare(`
 		UPDATE reviews
 		SET star = ?, content = ?, updated_at = ?
 		WHERE id = ?
+		  AND deleted_at IS NULL
 	`)
 
 	if err != nil {

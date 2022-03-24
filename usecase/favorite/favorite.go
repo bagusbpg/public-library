@@ -5,7 +5,6 @@ import (
 	"net/http"
 	_bookRepository "plain-go/public-library/datastore/book"
 	_userRepository "plain-go/public-library/datastore/user"
-	_entity "plain-go/public-library/entity"
 	_helper "plain-go/public-library/helper"
 	_model "plain-go/public-library/model"
 )
@@ -53,7 +52,7 @@ func (fuc FavoriteUseCase) AddBookToFavorite(userId uint, bookId uint) (res _mod
 	}
 
 	// check if book already in favorites
-	favs, err := fuc.bookRepo.GetAllFavorites(userId)
+	favs, err := fuc.bookRepo.GetAllFavoritesByUserId(userId)
 
 	// detect failure in repository
 	if err != nil {
@@ -116,7 +115,7 @@ func (fuc FavoriteUseCase) RemoveBookFromFavorite(userId uint, bookId uint) (cod
 	}
 
 	// check if book already in favorites
-	favs, err := fuc.bookRepo.GetAllFavorites(userId)
+	favs, err := fuc.bookRepo.GetAllFavoritesByUserId(userId)
 
 	// detect failure in repository
 	if err != nil {
@@ -148,7 +147,7 @@ func (fuc FavoriteUseCase) RemoveBookFromFavorite(userId uint, bookId uint) (cod
 	return
 }
 
-func (fuc FavoriteUseCase) GetAllFavorites(userId uint) (res _model.GetAllFavoritesResponse, code int, message string) {
+func (fuc FavoriteUseCase) GetAllFavoritesByUserId(userId uint) (res _model.GetAllFavoritesResponse, code int, message string) {
 	// check user existence
 	user, err := fuc.userRepo.GetUserById(userId)
 
@@ -166,7 +165,7 @@ func (fuc FavoriteUseCase) GetAllFavorites(userId uint) (res _model.GetAllFavori
 	}
 
 	// calling repository
-	favs, err := fuc.bookRepo.GetAllFavorites(userId)
+	favs, err := fuc.bookRepo.GetAllFavoritesByUserId(userId)
 
 	// detect failure in repository
 	if err != nil {
@@ -194,9 +193,10 @@ func (fuc FavoriteUseCase) GetAllFavorites(userId uint) (res _model.GetAllFavori
 		}
 
 		book.Author = authors
+		fav.Book = book
 		fav.CreatedAt, _ = _helper.TimeFormatter(fav.CreatedAt)
 
-		res.Favorites = append(res.Favorites, _entity.Favorite{Id: fav.Id, Book: book, CreatedAt: fav.CreatedAt})
+		res.Favorites = append(res.Favorites, fav)
 	}
 
 	res.User = user

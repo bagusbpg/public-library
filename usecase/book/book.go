@@ -181,6 +181,7 @@ func (buc BookUseCase) GetAllBooks() (res _model.GetAllBooksResponse, code int, 
 	}
 
 	for _, book := range books {
+		// get book author
 		authors, err := buc.repository.GetBookAuthors(book.Id)
 
 		if err != nil {
@@ -190,6 +191,7 @@ func (buc BookUseCase) GetAllBooks() (res _model.GetAllBooksResponse, code int, 
 
 		book.Author = authors
 
+		// get book quantity
 		quantity, err := buc.repository.CountBookById(book.Id)
 
 		if err != nil {
@@ -198,6 +200,16 @@ func (buc BookUseCase) GetAllBooks() (res _model.GetAllBooksResponse, code int, 
 		}
 
 		book.Quantity = quantity
+
+		// get book favorite count
+		favoriteCount, err := buc.repository.CountFavoritesByBookId(book.Id)
+
+		if err != nil {
+			code, message = http.StatusInternalServerError, "internal server error"
+			return
+		}
+
+		book.FavoriteCount = favoriteCount
 
 		res.Books = append(res.Books, book)
 	}
@@ -245,6 +257,15 @@ func (buc BookUseCase) GetBookById(bookId uint) (res _model.GetBookByIdResponse,
 		return
 	}
 
+	// get favorite count
+	res.Book.FavoriteCount, err = buc.repository.CountFavoritesByBookId(bookId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
 	// formatting response
 	res.Book.CreatedAt, _ = _helper.TimeFormatter(res.Book.CreatedAt)
 	res.Book.UpdatedAt, _ = _helper.TimeFormatter(res.Book.UpdatedAt)
@@ -267,6 +288,24 @@ func (buc BookUseCase) UpdateBook(req _model.UpdateBookRequest, bookId uint) (re
 	if book.Title == "" {
 		log.Println("book not found")
 		code, message = http.StatusNotFound, "book not found"
+		return
+	}
+
+	// get book's authors
+	book.Author, err = buc.repository.GetBookAuthors(bookId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// get book's favorite count
+	book.FavoriteCount, err = buc.repository.CountFavoritesByBookId(bookId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
 		return
 	}
 

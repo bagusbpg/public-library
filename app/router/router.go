@@ -49,7 +49,7 @@ func Router(
 		NewRoute(http.MethodDelete, "/books/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.LibrarianOnlyAuthorization).Then(book.Delete()).ServeHTTP),
 		NewRoute(http.MethodPost, "/favorites/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.JSONRequest).Then(favorite.AddBook()).ServeHTTP),
 		NewRoute(http.MethodDelete, "/favorites/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.JSONRequest).Then(favorite.RemoveBook()).ServeHTTP),
-		NewRoute(http.MethodGet, "/favorites/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById).Then(favorite.GetAll()).ServeHTTP),
+		NewRoute(http.MethodGet, "/favorites/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById).Then(favorite.GetAllByUserId()).ServeHTTP),
 		NewRoute(http.MethodGet, "/wishes", _mw.Do(_mw.Authentication, _mw.LibrarianOnlyAuthorization).Then(wish.GetAll()).ServeHTTP),
 		NewRoute(http.MethodPost, "/wishes/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.JSONRequest).Then(wish.AddBook()).ServeHTTP),
 		NewRoute(http.MethodGet, "/wishes/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.MemberOnlyAuthorization).Then(wish.GetAllByUser()).ServeHTTP),
@@ -57,8 +57,10 @@ func Router(
 		NewRoute(http.MethodDelete, "/wishes/(.+)/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.MemberOnlyAuthorization).Then(wish.RemoveBook()).ServeHTTP),
 		// NewRoute(http.MethodGet, "/reviews", _mw.Do(_mw.Authentication, _mw.LibrarianOnlyAuthorization).Then(review.GetAll()).ServeHTTP),
 		// NewRoute(http.MethodPost, "/reviews/(.+)", _mw.Do(_mw.JSONRequest, _mw.ValidateId, _mw.Authentication).Then(review.Create()).ServeHTTP),
-		// NewRoute(http.MethodGet, "/reviews/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication).Then(review.Get()).ServeHTTP),
-		// NewRoute(http.MethodPut, "/reviews/(.+)", _mw.Do(_mw.ValidateId, _mw.JSONRequest, _mw.Authentication))
+		// NewRoute(http.MethodGet, "/reviews/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication).Then(review.GetByBookId()).ServeHTTP),
+		// NewRoute(http.MethodGet, "/reviews/(.+)/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication).Then(review.GetByReviewId()).ServeHTTP),
+		// NewRoute(http.MethodPut, "/reviews/(.+)/(.+)", _mw.Do(_mw.ValidateId, _mw.JSONRequest, _mw.Authentication).Then(review.Update()).ServeHTTP),
+		// NewRoute(http.MethodDelete, "/reviews/(.+)/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication).Then(review.Delete()).ServeHTTP)
 	}
 
 	return func(rw http.ResponseWriter, r *http.Request) {
