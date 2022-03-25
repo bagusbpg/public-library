@@ -92,13 +92,11 @@ func (ruc ReviewUseCase) CreateReview(userId uint, bookId uint, req _model.Creat
 	// check user existence
 	user, err := ruc.userRepo.GetUserById(userId)
 
-	// detect failure in repository
 	if err != nil {
 		code, message = http.StatusInternalServerError, "internal server error"
 		return
 	}
 
-	// check if user does not exist
 	if user.Name == "" {
 		log.Println("user not found")
 		code, message = http.StatusNotFound, "user not found"
@@ -108,13 +106,11 @@ func (ruc ReviewUseCase) CreateReview(userId uint, bookId uint, req _model.Creat
 	// check book existence
 	book, err := ruc.bookRepo.GetBookById(bookId)
 
-	// detect failure in repository
 	if err != nil {
 		code, message = http.StatusInternalServerError, "internal server error"
 		return
 	}
 
-	// check if book does not exist
 	if book.Title == "" {
 		log.Println("book not found")
 		code, message = http.StatusNotFound, "book not found"
@@ -190,7 +186,7 @@ func (ruc ReviewUseCase) GetReviewByReviewId(bookId uint, reviewId uint) (res _m
 		return
 	}
 
-	// get book reviewed
+	// get book
 	review.Book, err = ruc.bookRepo.GetBookById(review.Book.Id)
 
 	if err != nil {
@@ -201,6 +197,12 @@ func (ruc ReviewUseCase) GetReviewByReviewId(bookId uint, reviewId uint) (res _m
 	if review.Book.Id != bookId {
 		log.Println("this book has no such review")
 		code, message = http.StatusNotFound, "this book has no such review"
+		return
+	}
+
+	if review.Content == "" {
+		log.Println("review not found")
+		code, message = http.StatusNotFound, "review not found"
 		return
 	}
 
@@ -266,16 +268,7 @@ func (ruc ReviewUseCase) GetAllReviewsByBookId(bookId uint) (res _model.GetAllRe
 	return
 }
 
-func (ruc ReviewUseCase) UpdateReview(userId uint, reviewId uint, req _model.UpdateReviewRequest) (res _model.UpdateReviewResponse, code int, message string) {
-	// get reviewer
-	user, err := ruc.userRepo.GetUserById(userId)
-
-	// detect failure in repository
-	if err != nil {
-		code, message = http.StatusInternalServerError, "internal server error"
-		return
-	}
-
+func (ruc ReviewUseCase) UpdateReview(userId uint, bookId uint, reviewId uint, req _model.UpdateReviewRequest) (res _model.UpdateReviewResponse, code int, message string) {
 	// check review existence
 	review, err := ruc.bookRepo.GetReviewByReviewId(reviewId)
 
@@ -284,9 +277,9 @@ func (ruc ReviewUseCase) UpdateReview(userId uint, reviewId uint, req _model.Upd
 		return
 	}
 
-	if review.Content == "" {
-		log.Println("review not found")
-		code, message = http.StatusNotFound, "review not found"
+	if review.Book.Id != bookId {
+		log.Println("this book has no such review")
+		code, message = http.StatusNotFound, "this book has no such review"
 		return
 	}
 
@@ -340,6 +333,15 @@ func (ruc ReviewUseCase) UpdateReview(userId uint, reviewId uint, req _model.Upd
 		return
 	}
 
+	// get reviewer
+	res.Review.User, err = ruc.userRepo.GetUserById(userId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
 	// get book
 	res.Review.Book, err = ruc.bookRepo.GetBookById(res.Review.Book.Id)
 
@@ -350,10 +352,9 @@ func (ruc ReviewUseCase) UpdateReview(userId uint, reviewId uint, req _model.Upd
 	}
 
 	// formatting response
-	user.Password = ""
-	user.CreatedAt, _ = _helper.TimeFormatter(user.CreatedAt)
-	user.UpdatedAt, _ = _helper.TimeFormatter(user.UpdatedAt)
-	res.Review.User = user
+	res.Review.User.Password = ""
+	res.Review.User.CreatedAt, _ = _helper.TimeFormatter(res.Review.User.CreatedAt)
+	res.Review.User.UpdatedAt, _ = _helper.TimeFormatter(res.Review.User.UpdatedAt)
 	res.Review.Book.CreatedAt, _ = _helper.TimeFormatter(res.Review.Book.CreatedAt)
 	res.Review.Book.UpdatedAt, _ = _helper.TimeFormatter(res.Review.Book.UpdatedAt)
 	res.Review.CreatedAt, _ = _helper.TimeFormatter(res.Review.CreatedAt)
@@ -362,7 +363,7 @@ func (ruc ReviewUseCase) UpdateReview(userId uint, reviewId uint, req _model.Upd
 	return
 }
 
-func (ruc ReviewUseCase) DeleteReview(userId uint, reviewId uint) (code int, message string) {
+func (ruc ReviewUseCase) DeleteReview(userId uint, bookId uint, reviewId uint) (code int, message string) {
 	// check review existence
 	review, err := ruc.bookRepo.GetReviewByReviewId(reviewId)
 
@@ -371,9 +372,9 @@ func (ruc ReviewUseCase) DeleteReview(userId uint, reviewId uint) (code int, mes
 		return
 	}
 
-	if review.Content == "" {
-		log.Println("review not found")
-		code, message = http.StatusNotFound, "review not found"
+	if review.Book.Id != bookId {
+		log.Println("this book has no such review")
+		code, message = http.StatusNotFound, "this book has no such review"
 		return
 	}
 

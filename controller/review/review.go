@@ -70,22 +70,6 @@ func (rc ReviewController) Create() http.HandlerFunc {
 	}
 }
 
-func (rc ReviewController) GetReviewById() http.HandlerFunc {
-	return func(rw http.ResponseWriter, r *http.Request) {
-		bookId, _ := strconv.Atoi(_mw.GetParam(r)[0])
-		reviewId, _ := strconv.Atoi(_mw.GetParam(r)[1])
-
-		res, code, message := rc.usecase.GetReviewByReviewId(uint(bookId), uint(reviewId))
-
-		if code != http.StatusOK {
-			_model.CreateResponse(rw, code, message, nil)
-			return
-		}
-
-		_model.CreateResponse(rw, code, message, res)
-	}
-}
-
 func (rc ReviewController) GetAllByBook() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		bookId, _ := strconv.Atoi(_mw.GetParam(r)[0])
@@ -101,8 +85,69 @@ func (rc ReviewController) GetAllByBook() http.HandlerFunc {
 	}
 }
 
+func (rc ReviewController) Get() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		bookId, _ := strconv.Atoi(_mw.GetParam(r)[0])
+		reviewId, _ := strconv.Atoi(_mw.GetParam(r)[1])
+
+		res, code, message := rc.usecase.GetReviewByReviewId(uint(bookId), uint(reviewId))
+
+		if code != http.StatusOK {
+			_model.CreateResponse(rw, code, message, nil)
+			return
+		}
+
+		_model.CreateResponse(rw, code, message, res)
+	}
+}
+
 func (rc ReviewController) Update() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
+		token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
+		userId, _, _ := _helper.ExtractToken(token)
 
+		bookId, _ := strconv.Atoi(_mw.GetParam(r)[0])
+		reviewId, _ := strconv.Atoi(_mw.GetParam(r)[1])
+
+		body, err := ioutil.ReadAll(r.Body)
+
+		if err != nil {
+			log.Println(err)
+			_model.CreateResponse(rw, http.StatusInternalServerError, "internal server error", nil)
+			return
+		}
+
+		defer r.Body.Close()
+
+		req := _model.UpdateReviewRequest{}
+
+		if err = json.Unmarshal(body, &req); err != nil {
+			log.Println(err)
+			_model.CreateResponse(rw, http.StatusBadRequest, "failed to bind request body", nil)
+			return
+		}
+
+		res, code, message := rc.usecase.UpdateReview(uint(userId), uint(bookId), uint(reviewId), req)
+
+		if code != http.StatusOK {
+			_model.CreateResponse(rw, code, message, nil)
+			return
+		}
+
+		_model.CreateResponse(rw, code, message, res)
+	}
+}
+
+func (rc ReviewController) Delete() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
+		userId, _, _ := _helper.ExtractToken(token)
+
+		bookId, _ := strconv.Atoi(_mw.GetParam(r)[0])
+		reviewId, _ := strconv.Atoi(_mw.GetParam(r)[1])
+
+		code, message := rc.usecase.DeleteReview(uint(userId), uint(bookId), uint(reviewId))
+
+		_model.CreateResponse(rw, code, message, nil)
 	}
 }

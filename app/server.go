@@ -10,12 +10,14 @@ import (
 	_util "plain-go/public-library/app/util"
 	_bookController "plain-go/public-library/controller/book"
 	_favoriteController "plain-go/public-library/controller/favorite"
+	_reviewController "plain-go/public-library/controller/review"
 	_userController "plain-go/public-library/controller/user"
 	_wishController "plain-go/public-library/controller/wish"
 	_bookRepository "plain-go/public-library/datastore/book"
 	_userRepository "plain-go/public-library/datastore/user"
 	_bookUseCase "plain-go/public-library/usecase/book"
 	_favoriteUseCase "plain-go/public-library/usecase/favorite"
+	_reviewUseCase "plain-go/public-library/usecase/review"
 	_userUseCase "plain-go/public-library/usecase/user"
 	_wishUseCase "plain-go/public-library/usecase/wish"
 )
@@ -54,8 +56,19 @@ func main() {
 	wishUseCase := _wishUseCase.New(bookRepository, userRepository)
 	wishController := _wishController.New(wishUseCase)
 
+	reviewUseCase := _reviewUseCase.New(bookRepository, userRepository)
+	reviewController := _reviewController.New(reviewUseCase)
+
 	// register handlers
-	router := http.HandlerFunc(_router.Router(userController, bookController, favoriteController, wishController))
+	router := http.HandlerFunc(
+		_router.Router(
+			userController,
+			bookController,
+			favoriteController,
+			wishController,
+			reviewController,
+		),
+	)
 
 	// start the server
 	fmt.Println("Listening...")
