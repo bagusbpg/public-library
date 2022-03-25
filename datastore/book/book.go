@@ -972,7 +972,7 @@ func (br *BookRepository) CreateReview(newReview _entity.AllReview) (review _ent
 	defer stmt.Close()
 
 	// execute statement
-	flag := "unread"
+	flag := 0
 	res, err := stmt.Exec(newReview.User.Id, newReview.Book.Id, newReview.Star, newReview.Content, flag, newReview.CreatedAt, newReview.UpdatedAt)
 
 	if err != nil {
@@ -997,7 +997,7 @@ func (br *BookRepository) CreateReview(newReview _entity.AllReview) (review _ent
 func (br *BookRepository) GetReviewByReviewId(reviewId uint) (review _entity.AllReview, err error) {
 	// prepare statement before execution
 	stmt, err := br.db.Prepare(`
-		SELECT id, user_id, book_id, star, content, created_at, updated_at
+		SELECT id, user_id, book_id, star, content, flag, created_at, updated_at
 		FROM reviews
 		WHERE id = ?
 	`)
@@ -1020,7 +1020,7 @@ func (br *BookRepository) GetReviewByReviewId(reviewId uint) (review _entity.All
 	defer row.Close()
 
 	if row.Next() {
-		if err = row.Scan(&review.Id, &review.User.Id, &review.Book.Id, &review.Star, &review.Content, &review.CreatedAt, &review.UpdatedAt); err != nil {
+		if err = row.Scan(&review.Id, &review.User.Id, &review.Book.Id, &review.Star, &review.Content, &review.Flag, &review.CreatedAt, &review.UpdatedAt); err != nil {
 			log.Println(err)
 			return
 		}
@@ -1071,7 +1071,7 @@ func (br *BookRepository) UpdateReview(updatedReview _entity.AllReview) (review 
 	// prepare statement before execution
 	stmt, err := br.db.Prepare(`
 		UPDATE reviews
-		SET star = ?, content = ?, updated_at = ?
+		SET star = ?, content = ?, flag = ?, updated_at = ?
 		WHERE id = ?
 		  AND deleted_at IS NULL
 	`)
@@ -1083,7 +1083,7 @@ func (br *BookRepository) UpdateReview(updatedReview _entity.AllReview) (review 
 
 	defer stmt.Close()
 
-	_, err = stmt.Exec(updatedReview.Star, updatedReview.Content, updatedReview.UpdatedAt, updatedReview.Id)
+	_, err = stmt.Exec(updatedReview.Star, updatedReview.Content, &updatedReview.Flag, updatedReview.UpdatedAt, updatedReview.Id)
 
 	if err != nil {
 		log.Println(err)

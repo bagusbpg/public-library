@@ -61,7 +61,7 @@ type AllReview struct {
 	Book      Book      `json:"book_reviewed"`
 	Star      uint      `json:"star"`
 	Content   string    `json:"content"`
-	Flag      string    `json:"flag"`
+	Flag      uint      `json:"flag"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

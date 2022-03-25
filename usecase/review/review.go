@@ -172,7 +172,7 @@ func (ruc ReviewUseCase) CreateReview(userId uint, bookId uint, req _model.Creat
 	return
 }
 
-func (ruc ReviewUseCase) GetReviewByReviewId(reviewId uint) (res _model.GetReviewByReviewIdResponse, code int, message string) {
+func (ruc ReviewUseCase) GetReviewByReviewId(bookId uint, reviewId uint) (res _model.GetReviewByReviewIdResponse, code int, message string) {
 	// calling repository
 	review, err := ruc.bookRepo.GetReviewByReviewId(reviewId)
 
@@ -195,6 +195,12 @@ func (ruc ReviewUseCase) GetReviewByReviewId(reviewId uint) (res _model.GetRevie
 
 	if err != nil {
 		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	if review.Book.Id != bookId {
+		log.Println("this book has no such review")
+		code, message = http.StatusNotFound, "this book has no such review"
 		return
 	}
 
