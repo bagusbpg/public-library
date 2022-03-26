@@ -1095,6 +1095,32 @@ func (br *BookRepository) UpdateReview(updatedReview _entity.AllReview) (review 
 	return
 }
 
+func (br *BookRepository) UpdateReviewStatus(flag uint, reviewId uint) (err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		UPDATE reviews
+		SET flag = ?
+		WHERE id = ?
+	  	  AND deleted_at IS NULL
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec(flag, reviewId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	return
+}
+
 func (br *BookRepository) DeleteReview(reviewId uint) (err error) {
 	// prepare statement before execution
 	stmt, err := br.db.Prepare(`
@@ -1116,6 +1142,42 @@ func (br *BookRepository) DeleteReview(reviewId uint) (err error) {
 	if err != nil {
 		log.Println(err)
 		return
+	}
+
+	return
+}
+
+func (br *BookRepository) CountStarsByBookId(bookId uint) (averageStar float64, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		SELECT AVG(star)
+		FROM reviews
+		WHERE book_id = ?
+		GROUP BY book_id
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query(bookId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	if row.Next() {
+		if err = row.Scan(&averageStar); err != nil {
+			log.Println(err)
+			return
+		}
 	}
 
 	return

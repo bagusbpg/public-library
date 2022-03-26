@@ -359,6 +359,44 @@ func (ruc ReviewUseCase) UpdateReview(userId uint, bookId uint, reviewId uint, r
 	res.Review.Book.UpdatedAt, _ = _helper.TimeFormatter(res.Review.Book.UpdatedAt)
 	res.Review.CreatedAt, _ = _helper.TimeFormatter(res.Review.CreatedAt)
 	res.Review.UpdatedAt, _ = _helper.TimeFormatter(res.Review.UpdatedAt)
+	code, message = http.StatusOK, "success update review"
+
+	return
+}
+
+func (ruc ReviewUseCase) UpdateStatus(bookId uint, reviewId uint, req _model.UpdateReviewRequest) (code int, message string) {
+	// check review existence
+	review, err := ruc.bookRepo.GetReviewByReviewId(reviewId)
+
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	if review.Book.Id != bookId {
+		log.Println("this book has no such review")
+		code, message = http.StatusNotFound, "this book has no such review"
+		return
+	}
+
+	flag := uint(0)
+	if req.IsRead {
+		flag = 1
+	}
+
+	if review.Flag == flag {
+		log.Println("no update was performed")
+		code, message = http.StatusBadRequest, "no update was performed"
+		return
+	}
+
+	// calling repository
+	if err = ruc.bookRepo.UpdateReviewStatus(flag, reviewId); err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	code, message = http.StatusOK, "success update review status"
 
 	return
 }

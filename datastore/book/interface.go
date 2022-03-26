@@ -37,5 +37,7 @@ type Book interface {
 	GetReviewByReviewId(reviewId uint) (review _entity.AllReview, err error)
 	GetAllReviewsByBookId(bookId uint) (reviews []_entity.Review, err error)
 	UpdateReview(updatedReview _entity.AllReview) (review _entity.AllReview, err error)
+	UpdateReviewStatus(flag uint, reviewId uint) (err error)
 	DeleteReview(reviewId uint) (err error)
+	CountStarsByBookId(bookId uint) (averageStar float64, err error)
 }

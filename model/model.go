@@ -162,6 +162,7 @@ type CreateReviewResponse struct {
 type UpdateReviewRequest struct {
 	Star    uint   `json:"star"`
 	Content string `json:"content"`
+	IsRead  bool   `json:"is_read"`
 }
 
 type UpdateReviewResponse struct {

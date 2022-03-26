@@ -104,7 +104,7 @@ func (rc ReviewController) Get() http.HandlerFunc {
 func (rc ReviewController) Update() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		token := strings.TrimPrefix(r.Header.Get("authorization"), "Bearer ")
-		userId, _, _ := _helper.ExtractToken(token)
+		userId, role, _ := _helper.ExtractToken(token)
 
 		bookId, _ := strconv.Atoi(_mw.GetParam(r)[0])
 		reviewId, _ := strconv.Atoi(_mw.GetParam(r)[1])
@@ -127,14 +127,20 @@ func (rc ReviewController) Update() http.HandlerFunc {
 			return
 		}
 
-		res, code, message := rc.usecase.UpdateReview(uint(userId), uint(bookId), uint(reviewId), req)
+		if role == "Member" {
+			res, code, message := rc.usecase.UpdateReview(uint(userId), uint(bookId), uint(reviewId), req)
 
-		if code != http.StatusOK {
+			if code != http.StatusOK {
+				_model.CreateResponse(rw, code, message, nil)
+				return
+			}
+
+			_model.CreateResponse(rw, code, message, res)
+		} else if role == "Librarian" {
+			code, message := rc.usecase.UpdateStatus(uint(bookId), uint(reviewId), req)
+
 			_model.CreateResponse(rw, code, message, nil)
-			return
 		}
-
-		_model.CreateResponse(rw, code, message, res)
 	}
 }
 

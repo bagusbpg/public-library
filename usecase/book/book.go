@@ -182,34 +182,41 @@ func (buc BookUseCase) GetAllBooks() (res _model.GetAllBooksResponse, code int, 
 
 	for _, book := range books {
 		// get book author
-		authors, err := buc.repository.GetBookAuthors(book.Id)
+		book.Author, err = buc.repository.GetBookAuthors(book.Id)
 
 		if err != nil {
 			code, message = http.StatusInternalServerError, "internal server error"
 			return
 		}
-
-		book.Author = authors
 
 		// get book quantity
-		quantity, err := buc.repository.CountBookById(book.Id)
+		book.Quantity, err = buc.repository.CountBookById(book.Id)
 
 		if err != nil {
 			code, message = http.StatusInternalServerError, "internal server error"
 			return
 		}
-
-		book.Quantity = quantity
 
 		// get book favorite count
-		favoriteCount, err := buc.repository.CountFavoritesByBookId(book.Id)
+		book.FavoriteCount, err = buc.repository.CountFavoritesByBookId(book.Id)
 
 		if err != nil {
 			code, message = http.StatusInternalServerError, "internal server error"
 			return
 		}
 
-		book.FavoriteCount = favoriteCount
+		averageStar, err := buc.repository.CountStarsByBookId(book.Id)
+
+		if err != nil {
+			code, message = http.StatusInternalServerError, "internal server error"
+			return
+		}
+
+		if averageStar == 0 {
+			book.AverageStar = nil
+		} else {
+			book.AverageStar = averageStar
+		}
 
 		res.Books = append(res.Books, book)
 	}
@@ -266,6 +273,20 @@ func (buc BookUseCase) GetBookById(bookId uint) (res _model.GetBookByIdResponse,
 		return
 	}
 
+	// get average star
+	averageStar, err := buc.repository.CountStarsByBookId(book.Id)
+
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	if averageStar == 0 {
+		book.AverageStar = nil
+	} else {
+		book.AverageStar = averageStar
+	}
+
 	// formatting response
 	res.Book.CreatedAt, _ = _helper.TimeFormatter(res.Book.CreatedAt)
 	res.Book.UpdatedAt, _ = _helper.TimeFormatter(res.Book.UpdatedAt)
@@ -307,6 +328,20 @@ func (buc BookUseCase) UpdateBook(req _model.UpdateBookRequest, bookId uint) (re
 	if err != nil {
 		code, message = http.StatusInternalServerError, "internal server error"
 		return
+	}
+
+	// get average star
+	averageStar, err := buc.repository.CountStarsByBookId(book.Id)
+
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	if averageStar == 0 {
+		book.AverageStar = nil
+	} else {
+		book.AverageStar = averageStar
 	}
 
 	// prepare input string
