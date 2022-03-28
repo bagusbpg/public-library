@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 
 	_mw "plain-go/public-library/app/middleware"
@@ -63,6 +64,11 @@ func Router(
 		NewRoute(http.MethodGet, "/reviews/(.+)/(.+)", _mw.Do(_mw.ValidateId).Then(review.Get()).ServeHTTP),
 		NewRoute(http.MethodPut, "/reviews/(.+)/(.+)", _mw.Do(_mw.ValidateId, _mw.JSONRequest, _mw.Authentication).Then(review.Update()).ServeHTTP),
 		NewRoute(http.MethodDelete, "/reviews/(.+)/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication).Then(review.Delete()).ServeHTTP),
+		// NewRoute(http.MethodGet, "/requests", _mw.Do(_mw.Authentication, _mw.LibraryOnlyAuthorization).Then(request.GetAll()).ServeHTTP),
+		// NewRoute(http.MethodPost, "/requests/(.+)", _mw.Do(_mw.ValidateId, _mw.JSONRequest, _mw.Authentication, _mw.AuthorizedById).Then(request.Create()).ServeHTTP),
+		// NewRoute(http.MethodGet, "/requests/(.+)/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication).Then(request.Get()).ServeHTTP),
+		// NewRoute(http.MethodPut, "/requests/(.+)/(.+)", _mw.Do(_mw.ValidateId, _mw.JSONRequest, _mw.Authentication).Then(request.Update()).ServeHTTP),
+
 	}
 
 	return func(rw http.ResponseWriter, r *http.Request) {
@@ -102,6 +108,7 @@ func Router(
 		// if endpoint is matched, but method is not
 		if len(allowed) > 0 {
 			log.Println("method not allowed")
+			rw.Header().Set("Allow", strings.Join(allowed, ", "))
 			_model.CreateResponse(rw, http.StatusMethodNotAllowed, "method not allowed", nil)
 			return
 		}

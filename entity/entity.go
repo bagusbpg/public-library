@@ -28,6 +28,8 @@ type Book struct {
 	AverageStar   interface{} `json:"average_star"`
 	CreatedAt     time.Time   `json:"created_at"`
 	UpdatedAt     time.Time   `json:"updated_at"`
+	// ReadCount     uint        `json:"read_count"`
+	// Available     uint        `json:"available"`
 }
 
 type BookItem struct {
@@ -66,26 +68,20 @@ type AllReview struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type Rent struct {
-	Id          uint
-	Book        BookItem
-	User        User
-	Description string `json:"description"`
-	Status      RentStatus
-	Activity    Activity
-	StartAt     time.Time `json:"start_at"`
-	ReturnAt    time.Time `json:"return_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+type Request struct {
+	Id        uint
+	Book      BookItem
+	User      User
+	Status    RequestStatus
+	StartAt   time.Time   `json:"start_at"`
+	ReturnAt  time.Time   `json:"return_at"`
+	CancelAt  interface{} `json:"cancel_at"`
+	UpdatedAt time.Time   `json:"updated_at"`
 }
 
-type RentStatus struct {
+type RequestStatus struct {
 	Id          uint
 	Description string `json:"status"`
-}
-
-type Activity struct {
-	Id          uint
-	Description string `json:"activity"`
 }
 
 type Favorite struct {
