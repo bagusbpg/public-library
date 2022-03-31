@@ -18,7 +18,7 @@ func New(db *sql.DB) *RequestRepository {
 func (rr RequestRepository) GetRequestByUserIdAndBookId(userId uint, bookId uint) (requests []_entity.Request, err error) {
 	// prepare statement before execution
 	stmt, err := rr.db.Prepare(`
-		SELECT r.id, r.user_id, r.book_item_id, r.status_id, rs.description, r.start_at, r.return_at, r.updated_at
+		SELECT r.id, r.user_id, r.book_item_id, r.status_id, rs.description, r.created_at, r.start_at, r.return_at, r.updated_at
 		FROM requests r
 		JOIN book_items bi
 		ON r.book_items_id = bi.id
@@ -104,8 +104,8 @@ func (rr RequestRepository) GetAvailableBookByBookId(bookId uint) (bookItemId ui
 func (rr RequestRepository) CreateNewRequest(newRequest _entity.Request) (request _entity.Request, err error) {
 	// prepare statement before execution
 	stmt, err := rr.db.Prepare(`
-		INSERT INTO requests (user_id, book_item_id, status_id, start_at, return_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?)
+		INSERT INTO requests (user_id, book_item_id, status_id, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?)
 	`)
 
 	if err != nil {
@@ -116,7 +116,7 @@ func (rr RequestRepository) CreateNewRequest(newRequest _entity.Request) (reques
 	defer stmt.Close()
 
 	// execute statement
-	res, err := stmt.Exec(newRequest.User.Id, newRequest.Book.Id, newRequest.Status.Id, newRequest.StartAt, newRequest.ReturnAt, newRequest.UpdatedAt)
+	res, err := stmt.Exec(newRequest.User.Id, newRequest.Book.Id, newRequest.Status.Id, newRequest.CreatedAt, newRequest.UpdatedAt)
 
 	if err != nil {
 		log.Println(err)
@@ -140,7 +140,7 @@ func (rr RequestRepository) CreateNewRequest(newRequest _entity.Request) (reques
 func (rr RequestRepository) GetRequestByRequestId(requestId uint) (request _entity.Request, err error) {
 	// prepare statement before execution
 	stmt, err := rr.db.Prepare(`
-		SELECT r.id, r.user_id, r.book_id, r.status_id, rs.description, r.start_at, r.return_at, r.cancel_at, r.updated_at
+		SELECT r.id, r.user_id, r.book_id, r.status_id, rs.description, r.created_at, r.start_at, r.return_at, r.cancel_at, r.updated_at
 		FROM requests r
 		JOIN request_status rs
 		ON r.status_id = rs.id
@@ -175,7 +175,7 @@ func (rr RequestRepository) GetRequestByRequestId(requestId uint) (request _enti
 func (rr RequestRepository) GetAll() (requests []_entity.Request, err error) {
 	// prepare statement before execution
 	stmt, err := rr.db.Prepare(`
-		SELECT r.id, r.book_item_id, r.user_id, r.status_id, rs.description, r.start_at, r.return_at, r.cancel_at, r.updated_at
+		SELECT r.id, r.book_item_id, r.user_id, r.status_id, rs.description, r.created_at, r.start_at, r.return_at, r.cancel_at, r.updated_at
 		FROM requests r
 		JOIN request_status rs
 		ON r.status_id = rs.id
@@ -199,7 +199,7 @@ func (rr RequestRepository) GetAll() (requests []_entity.Request, err error) {
 	for row.Next() {
 		request := _entity.Request{}
 
-		if err = row.Scan(&request.Id, &request.Book.Id, &request.User.Id, &request.Status.Id, &request.StartAt, &request.ReturnAt, &request.CancelAt, &request.UpdatedAt); err != nil {
+		if err = row.Scan(&request.Id, &request.Book.Id, &request.User.Id, &request.Status.Id, &request.CreatedAt, &request.StartAt, &request.ReturnAt, &request.CancelAt, &request.UpdatedAt); err != nil {
 			log.Println(err)
 			return
 		}
@@ -243,4 +243,8 @@ func (rr RequestRepository) GetRequestStatusId(statusDesc string) (statusId uint
 	}
 
 	return
+}
+
+func (rr RequestRepository) Update() {
+
 }

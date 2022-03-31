@@ -73,8 +73,9 @@ type Request struct {
 	Book      BookItem
 	User      User
 	Status    RequestStatus
-	StartAt   time.Time   `json:"start_at"`
-	ReturnAt  time.Time   `json:"return_at"`
+	CreatedAt time.Time   `json:"created_at"`
+	StartAt   interface{} `json:"start_at"`
+	ReturnAt  interface{} `json:"return_at"`
 	CancelAt  interface{} `json:"cancel_at"`
 	UpdatedAt time.Time   `json:"updated_at"`
 }
