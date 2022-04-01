@@ -40,4 +40,5 @@ type Book interface {
 	UpdateReviewStatus(flag uint, reviewId uint) (err error)
 	DeleteReview(reviewId uint) (err error)
 	CountStarsByBookId(bookId uint) (averageStar float64, err error)
+	GetBookByItemId(itemId uint) (book _entity.Book, err error)
 }

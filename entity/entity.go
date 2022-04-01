@@ -70,7 +70,7 @@ type AllReview struct {
 
 type Request struct {
 	Id        uint
-	Book      BookItem
+	BookItem  BookItem
 	User      User
 	Status    RequestStatus
 	CreatedAt time.Time   `json:"created_at"`

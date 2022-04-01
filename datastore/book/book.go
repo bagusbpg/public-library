@@ -1182,3 +1182,42 @@ func (br *BookRepository) CountStarsByBookId(bookId uint) (averageStar float64, 
 
 	return
 }
+
+func (br *BookRepository) GetBookByItemId(itemId uint) (book _entity.Book, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		SELECT b.id, b.title, b.publisher, b.language, b.pages, b.category, b.isbn13, b.description, b.created_at, b.updated_at
+		FROM books b
+		JOIN book_items bi
+		ON b.id = bi.book_id
+		WHERE bi.id = ?
+		  AND b.deleted_at IS NULL
+		LIMIT 1
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query(itemId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	if row.Next() {
+		if err = row.Scan(&book.Id, &book.Title, &book.Publisher, &book.Language, &book.Pages, &book.Category, &book.ISBN13, &book.Description, &book.CreatedAt, &book.UpdatedAt); err != nil {
+			log.Println(err)
+			return
+		}
+	}
+
+	return
+}
