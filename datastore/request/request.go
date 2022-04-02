@@ -15,6 +15,41 @@ func New(db *sql.DB) *RequestRepository {
 	return &RequestRepository{db: db}
 }
 
+func (rr RequestRepository) CountActiveRequestByUserId(userId uint) (count uint, err error) {
+	// prepare statement before execution
+	stmt, err := rr.db.Prepare(`
+		SELECT COUNT(id)
+		FROM requests
+		WHERE cancel_at IS NULL
+		  AND return_at IS NULL
+		  AND user_id = ?
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query(userId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	if row.Next() {
+		if err = row.Scan(&count); err != nil {
+			log.Println(err)
+			return
+		}
+	}
+
+	return
+}
+
 func (rr RequestRepository) GetRequestByUserIdAndBookId(userId uint, bookId uint) (requests []_entity.Request, err error) {
 	// prepare statement before execution
 	stmt, err := rr.db.Prepare(`
@@ -57,45 +92,6 @@ func (rr RequestRepository) GetRequestByUserIdAndBookId(userId uint, bookId uint
 		}
 
 		requests = append(requests, request)
-	}
-
-	return
-}
-
-func (rr RequestRepository) GetAvailableBookByBookId(bookId uint) (bookItemId uint, err error) {
-	// prepare statement before execution
-	stmt, err := rr.db.Prepare(`
-		SELECT bi.id
-		FROM book_items bi
-		JOIN books b
-		ON bi.book_id = b.id
-		WHERE b.id = ?
-		  AND b.deleted_at IS NULL
-		  AND bi.status = 0
-		ORDER BY bi.id ASC
-		LIMIT 1
-	`)
-
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	defer stmt.Close()
-
-	// execute statement
-	row, err := stmt.Query(bookId)
-
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	if row.Next() {
-		if err = row.Scan(&bookItemId); err != nil {
-			log.Println(err)
-			return
-		}
 	}
 
 	return

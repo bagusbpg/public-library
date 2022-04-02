@@ -1221,3 +1221,42 @@ func (br *BookRepository) GetBookByItemId(itemId uint) (book _entity.Book, err e
 
 	return
 }
+
+func (br *BookRepository) GetAvailableBookByBookId(bookId uint) (bookItemId uint, err error) {
+	// prepare statement before execution
+	stmt, err := br.db.Prepare(`
+		SELECT bi.id
+		FROM book_items bi
+		JOIN books b
+		ON bi.book_id = b.id
+		WHERE b.id = ?
+		  AND b.deleted_at IS NULL
+		  AND bi.status = 0
+		ORDER BY bi.id ASC
+		LIMIT 1
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query(bookId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	if row.Next() {
+		if err = row.Scan(&bookItemId); err != nil {
+			log.Println(err)
+			return
+		}
+	}
+
+	return
+}

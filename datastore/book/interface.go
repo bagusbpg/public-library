@@ -41,4 +41,5 @@ type Book interface {
 	DeleteReview(reviewId uint) (err error)
 	CountStarsByBookId(bookId uint) (averageStar float64, err error)
 	GetBookByItemId(itemId uint) (book _entity.Book, err error)
+	GetAvailableBookByBookId(bookId uint) (bookItemId uint, err error)
 }

@@ -75,6 +75,7 @@ type Request struct {
 	Status    RequestStatus
 	CreatedAt time.Time   `json:"created_at"`
 	StartAt   interface{} `json:"start_at"`
+	FinishAt  interface{} `json:"finish_at"`
 	ReturnAt  interface{} `json:"return_at"`
 	CancelAt  interface{} `json:"cancel_at"`
 	UpdatedAt time.Time   `json:"updated_at"`
