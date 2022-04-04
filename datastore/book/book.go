@@ -227,7 +227,7 @@ func (br *BookRepository) CreateBookItem(book _entity.Book) (err error) {
 	// prepare statement before execution
 	stmt, err := br.db.Prepare(`
 		INSERT INTO book_items (book_id, status)
-		VALUES (?, 'AVAILABLE')
+		VALUES (?, 'availabe')
 	`)
 
 	if err != nil {
@@ -1231,7 +1231,7 @@ func (br *BookRepository) GetAvailableBookByBookId(bookId uint) (bookItemId uint
 		ON bi.book_id = b.id
 		WHERE b.id = ?
 		  AND b.deleted_at IS NULL
-		  AND bi.status = 0
+		  AND bi.status = 'available'
 		ORDER BY bi.id ASC
 		LIMIT 1
 	`)

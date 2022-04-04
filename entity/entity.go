@@ -35,17 +35,12 @@ type Book struct {
 type BookItem struct {
 	Id     uint
 	Book   Book
-	Status BookStatus
+	Status string
 }
 
 type Author struct {
 	Id   uint   `json:"id"`
 	Name string `json:"name"`
-}
-
-type BookStatus struct {
-	Id          uint
-	Description string
 }
 
 type Review struct {
