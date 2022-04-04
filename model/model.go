@@ -168,3 +168,7 @@ type UpdateReviewRequest struct {
 type UpdateReviewResponse struct {
 	Review _entity.AllReview `json:"review"`
 }
+
+type GetAllRequestResponse struct {
+	Requests []_entity.Request `json:"requests"`
+}

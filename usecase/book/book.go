@@ -281,11 +281,7 @@ func (buc BookUseCase) GetBookById(bookId uint) (res _model.GetBookByIdResponse,
 		return
 	}
 
-	if averageStar == 0 {
-		book.AverageStar = nil
-	} else {
-		book.AverageStar = averageStar
-	}
+	book.AverageStar = _helper.NilHandler(averageStar)
 
 	// formatting response
 	res.Book.CreatedAt, _ = _helper.TimeFormatter(res.Book.CreatedAt)

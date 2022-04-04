@@ -168,7 +168,7 @@ func (rr RequestRepository) GetRequestByRequestId(requestId uint) (request _enti
 	return
 }
 
-func (rr RequestRepository) GetAll() (requests []_entity.Request, err error) {
+func (rr RequestRepository) GetAllRequests() (requests []_entity.Request, err error) {
 	// prepare statement before execution
 	stmt, err := rr.db.Prepare(`
 		SELECT r.id, r.book_item_id, r.user_id, r.status_id, rs.description, r.created_at, r.start_at, r.return_at, r.cancel_at, r.updated_at

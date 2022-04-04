@@ -31,7 +31,7 @@ func (ruc ReviewUseCase) GetAllReviews() (res _model.GetAllReviewsResponse, code
 	}
 
 	for _, review := range reviews {
-		// get user detail
+		// get reviewer detail
 		user, err := ruc.userRepo.GetUserById(review.User.Id)
 
 		if err != nil {
@@ -89,7 +89,7 @@ func (ruc ReviewUseCase) CreateReview(userId uint, bookId uint, req _model.Creat
 		return
 	}
 
-	// check user existence
+	// check reviewer existence
 	user, err := ruc.userRepo.GetUserById(userId)
 
 	if err != nil {
@@ -283,7 +283,7 @@ func (ruc ReviewUseCase) UpdateReview(userId uint, bookId uint, reviewId uint, r
 		return
 	}
 
-	// check if user id not match
+	// check if reviewer id not match
 	if review.User.Id != userId {
 		log.Println("forbidden")
 		code, message = http.StatusForbidden, "forbidden"
@@ -416,7 +416,7 @@ func (ruc ReviewUseCase) DeleteReview(userId uint, bookId uint, reviewId uint) (
 		return
 	}
 
-	// check if user id not match
+	// check if reviewer id not match
 	if review.User.Id != userId {
 		log.Println("forbidden")
 		code, message = http.StatusForbidden, "forbidden"

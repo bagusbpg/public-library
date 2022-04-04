@@ -33,9 +33,9 @@ type Book struct {
 }
 
 type BookItem struct {
-	Id     uint
-	Book   Book
-	Status string
+	Id     uint   `json:"book_item_id"`
+	Book   Book   `json:"book_item_detail"`
+	Status string `json:"book_item_status"`
 }
 
 type Author struct {
@@ -64,8 +64,8 @@ type AllReview struct {
 }
 
 type Request struct {
-	Id        uint
-	BookItem  BookItem
+	Id        uint     `json:"id"`
+	BookItem  BookItem `json:"book_item"`
 	User      User
 	Status    RequestStatus
 	CreatedAt time.Time   `json:"created_at"`
