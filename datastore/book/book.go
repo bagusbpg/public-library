@@ -619,7 +619,7 @@ func (br *BookRepository) CountFavoritesByBookId(bookId uint) (count uint, err e
 	return
 }
 
-func (br *BookRepository) GetAllWishes() (wishes []_entity.AllWish, err error) {
+func (br *BookRepository) GetAllWishes() (wishes []_entity.SimplifiedWish, err error) {
 	// prepare statement before execution
 	stmt, err := br.db.Prepare(`
 		SELECT id, user_id, title, category, note, created_at, updated_at
@@ -644,7 +644,7 @@ func (br *BookRepository) GetAllWishes() (wishes []_entity.AllWish, err error) {
 	defer row.Close()
 
 	for row.Next() {
-		wish := _entity.AllWish{}
+		wish := _entity.SimplifiedWish{}
 
 		if err = row.Scan(&wish.Id, &wish.User.Id, &wish.Title, &wish.Category, &wish.Note, &wish.CreatedAt, &wish.UpdatedAt); err != nil {
 			log.Println(err)
@@ -918,7 +918,7 @@ func (br *BookRepository) DeleteWishAuthorJunction(wish _entity.Wish, author _en
 	return
 }
 
-func (br *BookRepository) GetAllReviews() (reviews []_entity.AllReview, err error) {
+func (br *BookRepository) GetAllReviews() (reviews []_entity.SimplifiedReview, err error) {
 	// prepare statment before execution
 	stmt, err := br.db.Prepare(`
 		SELECT id, user_id, book_id, star, content, flag, created_at, updated_at
@@ -944,7 +944,7 @@ func (br *BookRepository) GetAllReviews() (reviews []_entity.AllReview, err erro
 	defer row.Close()
 
 	for row.Next() {
-		review := _entity.AllReview{}
+		review := _entity.SimplifiedReview{}
 
 		if err = row.Scan(&review.Id, &review.User.Id, &review.Book.Id, &review.Star, &review.Content, &review.Flag, &review.CreatedAt, &review.UpdatedAt); err != nil {
 			log.Println(err)
@@ -957,7 +957,7 @@ func (br *BookRepository) GetAllReviews() (reviews []_entity.AllReview, err erro
 	return
 }
 
-func (br *BookRepository) CreateReview(newReview _entity.AllReview) (review _entity.AllReview, err error) {
+func (br *BookRepository) CreateReview(newReview _entity.SimplifiedReview) (review _entity.SimplifiedReview, err error) {
 	// prepare statement before execution
 	stmt, err := br.db.Prepare(`
 		INSERT INTO reviews (user_id, book_id, star, content, flag, created_at, updated_at)
@@ -994,7 +994,7 @@ func (br *BookRepository) CreateReview(newReview _entity.AllReview) (review _ent
 	return
 }
 
-func (br *BookRepository) GetReviewByReviewId(reviewId uint) (review _entity.AllReview, err error) {
+func (br *BookRepository) GetReviewByReviewId(reviewId uint) (review _entity.SimplifiedReview, err error) {
 	// prepare statement before execution
 	stmt, err := br.db.Prepare(`
 		SELECT id, user_id, book_id, star, content, flag, created_at, updated_at
@@ -1067,7 +1067,7 @@ func (br *BookRepository) GetAllReviewsByBookId(bookId uint) (reviews []_entity.
 	return
 }
 
-func (br *BookRepository) UpdateReview(updatedReview _entity.AllReview) (review _entity.AllReview, err error) {
+func (br *BookRepository) UpdateReview(updatedReview _entity.SimplifiedReview) (review _entity.SimplifiedReview, err error) {
 	// prepare statement before execution
 	stmt, err := br.db.Prepare(`
 		UPDATE reviews

@@ -137,7 +137,7 @@ func (ruc ReviewUseCase) CreateReview(userId uint, bookId uint, req _model.Creat
 
 	// prepare input to repository
 	now := time.Now()
-	newReview := _entity.AllReview{}
+	newReview := _entity.SimplifiedReview{}
 	newReview.User.Id = userId
 	newReview.Book.Id = bookId
 	newReview.Content = content
@@ -229,7 +229,6 @@ func (ruc ReviewUseCase) GetAllReviewsByBookId(bookId uint) (res _model.GetAllRe
 		return
 	}
 
-	// check if book does not exist
 	if book.Title == "" {
 		log.Println("book not found")
 		code, message = http.StatusNotFound, "book not found"

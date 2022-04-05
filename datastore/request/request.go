@@ -15,6 +15,85 @@ func New(db *sql.DB) *RequestRepository {
 	return &RequestRepository{db: db}
 }
 
+func (rr RequestRepository) GetAllRequests() (requests []_entity.Request, err error) {
+	// prepare statement before execution
+	stmt, err := rr.db.Prepare(`
+		SELECT r.id, r.book_item_id, r.user_id, r.status_id, rs.description, r.created_at, r.start_at, r.return_at, r.cancel_at, r.updated_at
+		FROM requests r
+		JOIN request_status rs
+		ON r.status_id = rs.id
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query()
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	for row.Next() {
+		request := _entity.Request{}
+
+		if err = row.Scan(&request.Id, &request.BookItem.Id, &request.User.Id, &request.Status.Id, &request.CreatedAt, &request.StartAt, &request.ReturnAt, &request.CancelAt, &request.UpdatedAt); err != nil {
+			log.Println(err)
+			return
+		}
+
+		requests = append(requests, request)
+	}
+
+	return
+}
+
+func (rr RequestRepository) GetAllRequestsByUserId(userId uint) (requests []_entity.SimplifiedRequest, err error) {
+	// prepare statement before execution
+	stmt, err := rr.db.Prepare(`
+		SELECT r.id, r.book_item_id, r.status_id, rs.description, r.created_at, r.start_at, r.return_at, r.cancel_at, r.updated_at
+		FROM requests r
+		JOIN request_status rs
+		ON r.status_id = rs.id
+		WHERE r.user_id = ?
+	`)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer stmt.Close()
+
+	// execute statement
+	row, err := stmt.Query(userId)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	defer row.Close()
+
+	for row.Next() {
+		request := _entity.SimplifiedRequest{}
+
+		if err = row.Scan(request.Id, request.BookItem.Id, request.Status.Id, request.Status.Description, request.CreatedAt, request.StartAt, request.ReturnAt, request.CancelAt, request.UpdatedAt); err != nil {
+			log.Println(err)
+			return
+		}
+
+		requests = append(requests, request)
+	}
+
+	return
+}
+
 func (rr RequestRepository) CountActiveRequestByUserId(userId uint) (count uint, err error) {
 	// prepare statement before execution
 	stmt, err := rr.db.Prepare(`
@@ -163,44 +242,6 @@ func (rr RequestRepository) GetRequestByRequestId(requestId uint) (request _enti
 			log.Println(err)
 			return
 		}
-	}
-
-	return
-}
-
-func (rr RequestRepository) GetAllRequests() (requests []_entity.Request, err error) {
-	// prepare statement before execution
-	stmt, err := rr.db.Prepare(`
-		SELECT r.id, r.book_item_id, r.user_id, r.status_id, rs.description, r.created_at, r.start_at, r.return_at, r.cancel_at, r.updated_at
-		FROM requests r
-		JOIN request_status rs
-		ON r.status_id = rs.id
-	`)
-
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	defer stmt.Close()
-
-	// execute statement
-	row, err := stmt.Query()
-
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	for row.Next() {
-		request := _entity.Request{}
-
-		if err = row.Scan(&request.Id, &request.BookItem.Id, &request.User.Id, &request.Status.Id, &request.CreatedAt, &request.StartAt, &request.ReturnAt, &request.CancelAt, &request.UpdatedAt); err != nil {
-			log.Println(err)
-			return
-		}
-
-		requests = append(requests, request)
 	}
 
 	return

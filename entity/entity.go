@@ -33,7 +33,7 @@ type Book struct {
 }
 
 type BookItem struct {
-	Id     uint   `json:"book_item_id"`
+	Id     int    `json:"book_item_id"`
 	Book   Book   `json:"book_item_detail"`
 	Status string `json:"book_item_status"`
 }
@@ -52,7 +52,7 @@ type Review struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type AllReview struct {
+type SimplifiedReview struct {
 	Id        uint      `json:"id"`
 	User      User      `json:"reviewer"`
 	Book      Book      `json:"book_reviewed"`
@@ -64,16 +64,28 @@ type AllReview struct {
 }
 
 type Request struct {
-	Id        uint     `json:"id"`
-	BookItem  BookItem `json:"book_item"`
-	User      User
-	Status    RequestStatus
-	CreatedAt time.Time   `json:"created_at"`
-	StartAt   interface{} `json:"start_at"`
-	FinishAt  interface{} `json:"finish_at"`
-	ReturnAt  interface{} `json:"return_at"`
-	CancelAt  interface{} `json:"cancel_at"`
-	UpdatedAt time.Time   `json:"updated_at"`
+	Id        uint          `json:"id"`
+	BookItem  BookItem      `json:"book_item"`
+	User      User          `json:"user"`
+	Status    RequestStatus `json:"status"`
+	CreatedAt time.Time     `json:"created_at"`
+	StartAt   interface{}   `json:"start_at"`
+	FinishAt  interface{}   `json:"finish_at"`
+	ReturnAt  interface{}   `json:"return_at"`
+	CancelAt  interface{}   `json:"cancel_at"`
+	UpdatedAt time.Time     `json:"updated_at"`
+}
+
+type SimplifiedRequest struct {
+	Id        uint          `json:"id"`
+	BookItem  BookItem      `json:"book_item"`
+	Status    RequestStatus `json:"status"`
+	CreatedAt time.Time     `json:"created_at"`
+	StartAt   interface{}   `json:"start_at"`
+	FinishAt  interface{}   `json:"finish_at"`
+	ReturnAt  interface{}   `json:"return_at"`
+	CancelAt  interface{}   `json:"cancel_at"`
+	UpdatedAt time.Time     `json:"updated_at"`
 }
 
 type RequestStatus struct {
@@ -97,7 +109,7 @@ type Wish struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type AllWish struct {
+type SimplifiedWish struct {
 	Id        uint      `json:"id"`
 	User      User      `json:"user"`
 	Title     string    `json:"title"`
