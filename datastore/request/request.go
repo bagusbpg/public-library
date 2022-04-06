@@ -212,7 +212,7 @@ func (rr RequestRepository) CreateNewRequest(newRequest _entity.Request) (reques
 	return
 }
 
-func (rr RequestRepository) GetRequestByRequestId(requestId uint) (request _entity.Request, err error) {
+func (rr RequestRepository) GetRequestById(requestId uint) (request _entity.Request, err error) {
 	// prepare statement before execution
 	stmt, err := rr.db.Prepare(`
 		SELECT r.id, r.user_id, r.book_id, r.status_id, rs.description, r.created_at, r.start_at, r.return_at, r.cancel_at, r.updated_at

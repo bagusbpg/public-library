@@ -146,7 +146,7 @@ type GetAllReviewsResponse struct {
 	Reviews []_entity.SimplifiedReview `json:"reviews"`
 }
 
-type GetReviewByReviewIdResponse struct {
+type GetReviewByIdResponse struct {
 	Review _entity.SimplifiedReview `json:"review"`
 }
 
@@ -175,6 +175,10 @@ type GetAllRequestResponse struct {
 
 type GetAllRequestByUserIdResponse struct {
 	Requests []_entity.SimplifiedRequest `json:"requests"`
+}
+
+type GetRequestByIdResponse struct {
+	Request _entity.Request `json:"request"`
 }
 
 type CreateRequestRequest struct {

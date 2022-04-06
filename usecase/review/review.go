@@ -168,7 +168,7 @@ func (ruc ReviewUseCase) CreateReview(userId uint, bookId uint, req _model.Creat
 	return
 }
 
-func (ruc ReviewUseCase) GetReviewByReviewId(bookId uint, reviewId uint) (res _model.GetReviewByReviewIdResponse, code int, message string) {
+func (ruc ReviewUseCase) GetReviewByReviewId(bookId uint, reviewId uint) (res _model.GetReviewByIdResponse, code int, message string) {
 	// calling repository
 	review, err := ruc.bookRepo.GetReviewByReviewId(reviewId)
 

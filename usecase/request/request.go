@@ -125,6 +125,54 @@ func (ruc RequestUseCase) GetAllRequestsByUserId(userId uint) (res _model.GetAll
 	return
 }
 
+func (ruc RequestUseCase) GetRequestById(requestId uint) (res _model.GetRequestByIdResponse, code int, message string) {
+	// calling repository
+	request, err := ruc.requestRepo.GetRequestById(requestId)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	if request.Status.Id == 0 {
+		log.Println("request not found")
+		code, message = http.StatusNotFound, "request not found"
+		return
+	}
+
+	// get requester
+	request.User, err = ruc.userRepo.GetUserById(request.User.Id)
+
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// get book
+	request.BookItem.Book, err = ruc.bookRepo.GetBookByItemId(uint(request.BookItem.Id))
+
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// formatting response
+	request.User.CreatedAt, _ = _helper.TimeFormatter(request.User.CreatedAt)
+	request.User.UpdatedAt, _ = _helper.TimeFormatter(request.User.UpdatedAt)
+	request.BookItem.Book.CreatedAt, _ = _helper.TimeFormatter(request.BookItem.Book.CreatedAt)
+	request.BookItem.Book.UpdatedAt, _ = _helper.TimeFormatter(request.BookItem.Book.UpdatedAt)
+	request.BookItem.Book.Quantity, _ = ruc.bookRepo.CountBookById(request.BookItem.Book.Id)
+	request.BookItem.Book.Author, _ = ruc.bookRepo.GetBookAuthors(request.BookItem.Book.Id)
+	request.BookItem.Book.FavoriteCount, _ = ruc.bookRepo.CountFavoritesByBookId(request.BookItem.Book.Id)
+	averageStar, _ := ruc.bookRepo.CountStarsByBookId(request.BookItem.Book.Id)
+	request.BookItem.Book.AverageStar = _helper.NilHandler(averageStar)
+	request.CreatedAt, _ = _helper.TimeFormatter(request.CreatedAt)
+	request.UpdatedAt, _ = _helper.TimeFormatter(request.UpdatedAt)
+
+	return
+}
+
 func (ruc RequestUseCase) CreateRequest(userId uint, req _model.CreateRequestRequest) (res _model.CreateRequestResponse, code int, message string) {
 	// check requester existence
 	user, err := ruc.userRepo.GetUserById(userId)
@@ -216,8 +264,27 @@ func (ruc RequestUseCase) CreateRequest(userId uint, req _model.CreateRequestReq
 	}
 
 	// formatting response
+	user.CreatedAt, _ = _helper.TimeFormatter(user.CreatedAt)
+	user.UpdatedAt, _ = _helper.TimeFormatter(user.UpdatedAt)
+	res.Request.User = user
+
+	book.CreatedAt, _ = _helper.TimeFormatter(book.CreatedAt)
+	book.UpdatedAt, _ = _helper.TimeFormatter(book.UpdatedAt)
+	averageStar, _ := ruc.bookRepo.CountStarsByBookId(req.BookId)
+	book.AverageStar = _helper.NilHandler(averageStar)
+	book.FavoriteCount, _ = ruc.bookRepo.CountFavoritesByBookId(req.BookId)
+	book.Author, _ = ruc.bookRepo.GetBookAuthors(req.BookId)
+	book.Quantity, _ = ruc.bookRepo.CountBookById(req.BookId)
 	res.Request.BookItem.Book = book
+
+	res.Request.CreatedAt, _ = _helper.TimeFormatter(res.Request.CreatedAt)
+	res.Request.UpdatedAt, _ = _helper.TimeFormatter(res.Request.UpdatedAt)
+
 	code, message = http.StatusCreated, "success create new request"
 
 	return
+}
+
+func (ruc RequestUseCase) UpdateRequest() {
+
 }
