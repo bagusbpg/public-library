@@ -285,6 +285,30 @@ func (ruc RequestUseCase) CreateRequest(userId uint, req _model.CreateRequestReq
 	return
 }
 
-func (ruc RequestUseCase) UpdateRequest() {
+func (ruc RequestUseCase) UpdateRequest(req _model.UpdateRequestRequest, requestId uint, role string) (res _model.UpdateRequestResponse, code int, message string) {
+	// check request existence
+	existingRequest, err := ruc.requestRepo.GetRequestById(requestId)
 
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	if existingRequest.Status.Id == 0 {
+		code, message = http.StatusNotFound, "request not found"
+		return
+	}
+
+	switch role {
+	case "Member":
+	case "Librarian":
+		switch req.ActionCode {
+		case 1:
+
+		}
+	default:
+		code, message = http.StatusBadRequest, "role not assigned"
+	}
+	return
 }

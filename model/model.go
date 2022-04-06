@@ -188,3 +188,11 @@ type CreateRequestRequest struct {
 type CreateRequestResponse struct {
 	Request _entity.Request `json:"request"`
 }
+
+type UpdateRequestRequest struct {
+	ActionCode uint `json:"action_code"`
+}
+
+type UpdateRequestResponse struct {
+	Request _entity.Request `json:"request"`
+}
