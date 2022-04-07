@@ -317,29 +317,6 @@ func (buc BookUseCase) UpdateBook(req _model.UpdateBookRequest, bookId uint) (re
 		return
 	}
 
-	// get book's favorite count
-	book.FavoriteCount, err = buc.repository.CountFavoritesByBookId(bookId)
-
-	// detect failure in repository
-	if err != nil {
-		code, message = http.StatusInternalServerError, "internal server error"
-		return
-	}
-
-	// get average star
-	averageStar, err := buc.repository.CountStarsByBookId(book.Id)
-
-	if err != nil {
-		code, message = http.StatusInternalServerError, "internal server error"
-		return
-	}
-
-	if averageStar == 0 {
-		book.AverageStar = nil
-	} else {
-		book.AverageStar = averageStar
-	}
-
 	// prepare input string
 	title := strings.Title(strings.TrimSpace(req.Title))
 	publisher := strings.TrimSpace(req.Publisher)
@@ -504,6 +481,22 @@ func (buc BookUseCase) UpdateBook(req _model.UpdateBookRequest, bookId uint) (re
 	// formatting response
 	res.Book = _book
 	res.Book.Id = book.Id
+	res.Book.FavoriteCount, err = buc.repository.CountFavoritesByBookId(bookId)
+
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	averageStar, err := buc.repository.CountStarsByBookId(book.Id)
+
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	res.Book.AverageStar = _helper.NilHandler(averageStar)
+	res.Book.CreatedAt, _ = _helper.TimeFormatter(res.Book.CreatedAt)
 	res.Book.UpdatedAt, _ = _helper.TimeFormatter(res.Book.UpdatedAt)
 	code, message = http.StatusOK, "success update book"
 

@@ -68,6 +68,7 @@ type Request struct {
 	BookItem  BookItem      `json:"book_item"`
 	User      User          `json:"user"`
 	Status    RequestStatus `json:"status"`
+	Extended  uint          `json:"extended"`
 	CreatedAt time.Time     `json:"created_at"`
 	StartAt   interface{}   `json:"start_at"`
 	FinishAt  interface{}   `json:"finish_at"`
@@ -80,6 +81,7 @@ type SimplifiedRequest struct {
 	Id        uint          `json:"id"`
 	BookItem  BookItem      `json:"book_item"`
 	Status    RequestStatus `json:"status"`
+	Extended  uint          `json:"extended"`
 	CreatedAt time.Time     `json:"created_at"`
 	StartAt   interface{}   `json:"start_at"`
 	FinishAt  interface{}   `json:"finish_at"`

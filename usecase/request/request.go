@@ -70,6 +70,10 @@ func (ruc RequestUseCase) GetAllRequests() (res _model.GetAllRequestResponse, co
 		averageStar, _ := ruc.bookRepo.CountStarsByBookId(request.BookItem.Book.Id)
 		request.BookItem.Book.AverageStar = _helper.NilHandler(averageStar)
 		request.CreatedAt, _ = _helper.TimeFormatter(request.CreatedAt)
+		request.StartAt, _ = _helper.TimeFormatter(request.StartAt)
+		request.FinishAt, _ = _helper.TimeFormatter(request.FinishAt)
+		request.ReturnAt, _ = _helper.TimeFormatter(request.ReturnAt)
+		request.CancelAt, _ = _helper.TimeFormatter(request.CancelAt)
 		request.UpdatedAt, _ = _helper.TimeFormatter(request.UpdatedAt)
 
 		res.Requests = append(res.Requests, request)
@@ -115,6 +119,10 @@ func (ruc RequestUseCase) GetAllRequestsByUserId(userId uint) (res _model.GetAll
 		averageStar, _ := ruc.bookRepo.CountStarsByBookId(request.BookItem.Book.Id)
 		request.BookItem.Book.AverageStar = _helper.NilHandler(averageStar)
 		request.CreatedAt, _ = _helper.TimeFormatter(request.CreatedAt)
+		request.StartAt, _ = _helper.TimeFormatter(request.StartAt)
+		request.FinishAt, _ = _helper.TimeFormatter(request.FinishAt)
+		request.ReturnAt, _ = _helper.TimeFormatter(request.ReturnAt)
+		request.CancelAt, _ = _helper.TimeFormatter(request.CancelAt)
 		request.UpdatedAt, _ = _helper.TimeFormatter(request.UpdatedAt)
 
 		res.Requests = append(res.Requests, request)
@@ -168,6 +176,10 @@ func (ruc RequestUseCase) GetRequestById(requestId uint) (res _model.GetRequestB
 	averageStar, _ := ruc.bookRepo.CountStarsByBookId(request.BookItem.Book.Id)
 	request.BookItem.Book.AverageStar = _helper.NilHandler(averageStar)
 	request.CreatedAt, _ = _helper.TimeFormatter(request.CreatedAt)
+	request.StartAt, _ = _helper.TimeFormatter(request.StartAt)
+	request.FinishAt, _ = _helper.TimeFormatter(request.FinishAt)
+	request.ReturnAt, _ = _helper.TimeFormatter(request.ReturnAt)
+	request.CancelAt, _ = _helper.TimeFormatter(request.CancelAt)
 	request.UpdatedAt, _ = _helper.TimeFormatter(request.UpdatedAt)
 
 	return
@@ -234,22 +246,12 @@ func (ruc RequestUseCase) CreateRequest(userId uint, req _model.CreateRequestReq
 
 	if bookItemId == 0 {
 		newRequest.BookItem.Id = -1
+		newRequest.Status.Id = 1
 		newRequest.Status.Description = "waiting in queue"
 	} else {
 		newRequest.BookItem.Id = int(bookItemId)
+		newRequest.Status.Id = 2
 		newRequest.Status.Description = "book is being prepared"
-	}
-
-	newRequest.Status.Id, err = ruc.requestRepo.GetRequestStatusId(newRequest.Status.Description)
-
-	if err != nil {
-		code, message = http.StatusInternalServerError, "internal server error"
-		return
-	}
-
-	if newRequest.Status.Id == 0 {
-		code, message = http.StatusNotFound, "status not found"
-		return
 	}
 
 	newRequest.CreatedAt = now
@@ -287,7 +289,7 @@ func (ruc RequestUseCase) CreateRequest(userId uint, req _model.CreateRequestReq
 
 func (ruc RequestUseCase) UpdateRequest(req _model.UpdateRequestRequest, requestId uint, role string) (res _model.UpdateRequestResponse, code int, message string) {
 	// check request existence
-	existingRequest, err := ruc.requestRepo.GetRequestById(requestId)
+	request, err := ruc.requestRepo.GetRequestById(requestId)
 
 	// detect failure in repository
 	if err != nil {
@@ -295,20 +297,120 @@ func (ruc RequestUseCase) UpdateRequest(req _model.UpdateRequestRequest, request
 		return
 	}
 
-	if existingRequest.Status.Id == 0 {
+	if request.Status.Id == 0 {
 		code, message = http.StatusNotFound, "request not found"
 		return
 	}
 
+	if request.CancelAt != nil {
+		code, message = http.StatusBadRequest, "request already cancelled"
+		return
+	}
+
+	// global timestamp
+	now := time.Now()
+	request.UpdatedAt = now
+
 	switch role {
 	case "Member":
+		switch req.ActionCode {
+		case 11: // cancel request
+			// check if cancelling request is possible
+			if request.Status.Id > 2 {
+				log.Println("cannot cancel request at this time")
+				code, message = http.StatusBadRequest, "cannot cancel request at this time"
+				return
+			}
+
+			// prepare input to repository
+			request.Status.Id = 3 // "request is cancelled"
+			request.CancelAt = now
+		case 12: // extend request
+			// check if extending request is possible
+			if request.Extended != 0 || request.Status.Id != 5 {
+				log.Println("cannot extend request at this time")
+				code, message = http.StatusBadRequest, "cannot extend request at this time"
+				return
+			}
+
+			// prepare input to repository
+			request.Status.Id = 6 // "request is extended"
+			request.Extended = 1
+			request.FinishAt = now.AddDate(0, 0, 7)
+		}
 	case "Librarian":
 		switch req.ActionCode {
-		case 1:
+		case 21: // notify for book pick up
+			// check if request is not cancelled and notifying is possible
+			if request.Status.Id != 2 {
+				log.Println("cannot notify pick up at this time")
+				code, message = http.StatusBadRequest, "cannot notify pick up at this time"
+				return
+			}
 
+			// prepare input to repository
+			request.Status.Id = 4 // "book is ready for pick up"
+		case 22: // borrow period started
+			// check if request is not cancelled and borrowing is possible
+			if request.Status.Id != 4 {
+				log.Println("cannot hand over book at this time")
+				code, message = http.StatusBadRequest, "cannot hand over book at this time"
+				return
+			}
+
+			// prepare input to repository
+			request.Status.Id = 5 // "book is borrowed"
+			request.FinishAt = now.AddDate(0, 0, 7)
+		case 23: // normal return (no penalty)
+			// check if normal return is possible
+			if request.Status.Id < 5 || request.Status.Id > 6 {
+				log.Println("return is not possible at this time")
+				code, message = http.StatusBadRequest, "return is not possible at this time"
+				return
+			}
+
+			if finishAt := request.FinishAt.(time.Time); finishAt.After(now) {
+				log.Println("penalty must be paid first")
+				code, message = http.StatusBadRequest, "penalty must be paid first"
+				return
+			}
+
+			// prepare input to repository
+			request.Status.Id = 10
+			request.ReturnAt = now
 		}
 	default:
+		log.Println("role not assigned")
 		code, message = http.StatusBadRequest, "role not assigned"
 	}
+
+	// calling repository
+	res.Request, err = ruc.requestRepo.Update(request)
+
+	// detect failure in repository
+	if err != nil {
+		code, message = http.StatusInternalServerError, "internal server error"
+		return
+	}
+
+	// formatting response
+	res.Request.User, _ = ruc.userRepo.GetUserById(res.Request.User.Id)
+	res.Request.User.CreatedAt, _ = _helper.TimeFormatter(res.Request.User.CreatedAt)
+	res.Request.User.UpdatedAt, _ = _helper.TimeFormatter(res.Request.UpdatedAt)
+	res.Request.BookItem.Book, _ = ruc.bookRepo.GetBookByItemId(uint(res.Request.BookItem.Id))
+	res.Request.BookItem.Book.CreatedAt, _ = _helper.TimeFormatter(res.Request.BookItem.Book.CreatedAt)
+	res.Request.BookItem.Book.UpdatedAt, _ = _helper.TimeFormatter(res.Request.BookItem.Book.UpdatedAt)
+	res.Request.BookItem.Book.Quantity, _ = ruc.bookRepo.CountBookById(res.Request.BookItem.Book.Id)
+	res.Request.BookItem.Book.Author, _ = ruc.bookRepo.GetBookAuthors(res.Request.BookItem.Book.Id)
+	res.Request.BookItem.Book.FavoriteCount, _ = ruc.bookRepo.CountFavoritesByBookId(res.Request.BookItem.Book.Id)
+	averageStar, _ := ruc.bookRepo.CountStarsByBookId(res.Request.BookItem.Book.Id)
+	res.Request.BookItem.Book.AverageStar = _helper.NilHandler(averageStar)
+	res.Request.CreatedAt, _ = _helper.TimeFormatter(res.Request.CreatedAt)
+	res.Request.UpdatedAt, _ = _helper.TimeFormatter(res.Request.UpdatedAt)
+	if res.Request.CancelAt != nil {
+		res.Request.CancelAt, _ = _helper.TimeFormatter(res.Request.CancelAt)
+	}
+	code, message = http.StatusOK, "success update request"
+
 	return
 }

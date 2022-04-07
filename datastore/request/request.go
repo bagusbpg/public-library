@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"log"
 	_entity "plain-go/public-library/entity"
-	"strings"
 )
 
 type RequestRepository struct {
@@ -18,7 +17,7 @@ func New(db *sql.DB) *RequestRepository {
 func (rr RequestRepository) GetAllRequests() (requests []_entity.Request, err error) {
 	// prepare statement before execution
 	stmt, err := rr.db.Prepare(`
-		SELECT r.id, r.book_item_id, r.user_id, r.status_id, rs.description, r.created_at, r.start_at, r.return_at, r.cancel_at, r.updated_at
+		SELECT r.id, r.book_item_id, r.user_id, r.status_id, rs.description, r.extended, r.created_at, r.start_at, r.finish_at, r.return_at, r.cancel_at, r.updated_at
 		FROM requests r
 		JOIN request_status rs
 		ON r.status_id = rs.id
@@ -42,7 +41,7 @@ func (rr RequestRepository) GetAllRequests() (requests []_entity.Request, err er
 	for row.Next() {
 		request := _entity.Request{}
 
-		if err = row.Scan(&request.Id, &request.BookItem.Id, &request.User.Id, &request.Status.Id, &request.CreatedAt, &request.StartAt, &request.ReturnAt, &request.CancelAt, &request.UpdatedAt); err != nil {
+		if err = row.Scan(&request.Id, &request.BookItem.Id, &request.User.Id, &request.Status.Id, &request.Status.Description, &request.Extended, &request.CreatedAt, &request.StartAt, &request.FinishAt, &request.ReturnAt, &request.CancelAt, &request.UpdatedAt); err != nil {
 			log.Println(err)
 			return
 		}
@@ -56,7 +55,7 @@ func (rr RequestRepository) GetAllRequests() (requests []_entity.Request, err er
 func (rr RequestRepository) GetAllRequestsByUserId(userId uint) (requests []_entity.SimplifiedRequest, err error) {
 	// prepare statement before execution
 	stmt, err := rr.db.Prepare(`
-		SELECT r.id, r.book_item_id, r.status_id, rs.description, r.created_at, r.start_at, r.return_at, r.cancel_at, r.updated_at
+		SELECT r.id, r.book_item_id, r.status_id, rs.description, r.extended, r.created_at, r.start_at, r.finish_at, r.return_at, r.cancel_at, r.updated_at
 		FROM requests r
 		JOIN request_status rs
 		ON r.status_id = rs.id
@@ -83,7 +82,7 @@ func (rr RequestRepository) GetAllRequestsByUserId(userId uint) (requests []_ent
 	for row.Next() {
 		request := _entity.SimplifiedRequest{}
 
-		if err = row.Scan(request.Id, request.BookItem.Id, request.Status.Id, request.Status.Description, request.CreatedAt, request.StartAt, request.ReturnAt, request.CancelAt, request.UpdatedAt); err != nil {
+		if err = row.Scan(request.Id, request.BookItem.Id, request.Status.Id, request.Status.Description, request.Extended, request.CreatedAt, request.StartAt, &request.FinishAt, request.ReturnAt, request.CancelAt, request.UpdatedAt); err != nil {
 			log.Println(err)
 			return
 		}
@@ -132,7 +131,7 @@ func (rr RequestRepository) CountActiveRequestByUserId(userId uint) (count uint,
 func (rr RequestRepository) GetRequestByUserIdAndBookId(userId uint, bookId uint) (requests []_entity.Request, err error) {
 	// prepare statement before execution
 	stmt, err := rr.db.Prepare(`
-		SELECT r.id, r.user_id, r.book_item_id, r.status_id, rs.description, r.created_at, r.start_at, r.return_at, r.updated_at
+		SELECT r.id, r.user_id, r.book_item_id, r.status_id, rs.description, r.extended, r.created_at, r.start_at, r.finish_at, r.return_at, r.updated_at
 		FROM requests r
 		JOIN book_items bi
 		ON r.book_item_id = bi.id
@@ -165,7 +164,7 @@ func (rr RequestRepository) GetRequestByUserIdAndBookId(userId uint, bookId uint
 	for row.Next() {
 		request := _entity.Request{}
 
-		if err = row.Scan(&request.Id, &request.User.Id, &request.BookItem.Id, &request.Status.Id, &request.Status.Description, &request.StartAt, &request.ReturnAt, &request.UpdatedAt); err != nil {
+		if err = row.Scan(&request.Id, &request.User.Id, &request.BookItem.Id, &request.Status.Id, &request.Status.Description, &request.Extended, &request.StartAt, &request.FinishAt, &request.ReturnAt, &request.UpdatedAt); err != nil {
 			log.Println(err)
 			return
 		}
@@ -215,7 +214,7 @@ func (rr RequestRepository) CreateNewRequest(newRequest _entity.Request) (reques
 func (rr RequestRepository) GetRequestById(requestId uint) (request _entity.Request, err error) {
 	// prepare statement before execution
 	stmt, err := rr.db.Prepare(`
-		SELECT r.id, r.user_id, r.book_id, r.status_id, rs.description, r.created_at, r.start_at, r.return_at, r.cancel_at, r.updated_at
+		SELECT r.id, r.user_id, r.book_id, r.status_id, rs.description, r.extended, r.created_at, r.start_at, r.finish_at, r.return_at, r.cancel_at, r.updated_at
 		FROM requests r
 		JOIN request_status rs
 		ON r.status_id = rs.id
@@ -238,42 +237,7 @@ func (rr RequestRepository) GetRequestById(requestId uint) (request _entity.Requ
 	}
 
 	if row.Next() {
-		if err = row.Scan(&request.Id, &request.User.Id, &request.BookItem.Id, &request.Status.Id, &request.Status.Description, &request.StartAt, &request.ReturnAt, &request.CancelAt, &request.UpdatedAt); err != nil {
-			log.Println(err)
-			return
-		}
-	}
-
-	return
-}
-
-func (rr RequestRepository) GetRequestStatusId(statusDesc string) (statusId uint, err error) {
-	// prepare statement before execution
-	stmt, err := rr.db.Prepare(`
-		SELECT id
-		FROM request_status
-		WHERE UPPER(description) = ?
-	`)
-
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	defer stmt.Close()
-
-	// execute statement
-	row, err := stmt.Query(strings.ToUpper(statusDesc))
-
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	defer row.Close()
-
-	if row.Next() {
-		if err = row.Scan(&statusId); err != nil {
+		if err = row.Scan(&request.Id, &request.User.Id, &request.BookItem.Id, &request.Status.Id, &request.Status.Description, &request.Extended, &request.StartAt, &request.ReturnAt, &request.CancelAt, &request.UpdatedAt); err != nil {
 			log.Println(err)
 			return
 		}
@@ -286,9 +250,8 @@ func (rr RequestRepository) Update(updatedRequest _entity.Request) (request _ent
 	// prepare statment before execution
 	stmt, err := rr.db.Prepare(`
 		UPDATE requests
-		SET status_id = ?, updated_at = ?
+		SET status_id = ?, extended = ?, finish_at = ?, cancel_at = ?, updated_at = ?
 		WHERE id = ?
-		  AND cancel_at IS NULL
 	`)
 
 	if err != nil {
@@ -299,7 +262,7 @@ func (rr RequestRepository) Update(updatedRequest _entity.Request) (request _ent
 	defer stmt.Close()
 
 	// execute statement
-	_, err = stmt.Exec(updatedRequest.Status.Id, updatedRequest.UpdatedAt, updatedRequest.Id)
+	_, err = stmt.Exec(updatedRequest.Status.Id, updatedRequest.Extended, updatedRequest.FinishAt, updatedRequest.CancelAt, updatedRequest.UpdatedAt, updatedRequest.Id)
 
 	if err != nil {
 		log.Println(err)
