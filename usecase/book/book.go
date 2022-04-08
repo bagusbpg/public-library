@@ -170,7 +170,7 @@ func (buc BookUseCase) CreateBook(req _model.CreateBookRequest) (res _model.Crea
 	return
 }
 
-func (buc BookUseCase) GetAllBooks() (res _model.GetAllBooksResponse, code int, message string) {
+func (buc BookUseCase) GetAllBooks(params _model.GetAllBooksRequest) (res _model.GetAllBooksResponse, code int, message string) {
 	// calling repository
 	books, err := buc.repository.GetAllBooks()
 

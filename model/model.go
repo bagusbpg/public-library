@@ -65,6 +65,11 @@ type CreateAuthorRequest struct {
 	Name string `json:"name"`
 }
 
+type GetAllBooksRequest struct {
+	Page    int
+	Records int
+}
+
 type GetAllBooksResponse struct {
 	Books []_entity.Book `json:"books"`
 	Count uint           `json:"count"`

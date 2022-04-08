@@ -48,7 +48,7 @@ func Router(
 		NewRoute(http.MethodPut, `/users/(.+)`, _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById, _mw.JSONRequest).Then(user.Update()).ServeHTTP),
 		NewRoute(http.MethodDelete, `/users/(.+)`, _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.AuthorizedById).Then(user.Delete()).ServeHTTP),
 		NewRoute(http.MethodPost, `/books`, _mw.Do(_mw.JSONRequest, _mw.LibrarianOnlyAuthorization).Then(book.Create()).ServeHTTP),
-		NewRoute(http.MethodGet, `/books\?.*$`, book.GetAll().ServeHTTP),
+		NewRoute(http.MethodGet, `/books?.*`, book.GetAll().ServeHTTP),
 		NewRoute(http.MethodGet, `/books/(.+)`, _mw.Do(_mw.ValidateId).Then(book.Get()).ServeHTTP),
 		NewRoute(http.MethodPut, `/books/(.+)`, _mw.Do(_mw.ValidateId, _mw.JSONRequest, _mw.Authentication, _mw.LibrarianOnlyAuthorization).Then(book.Update()).ServeHTTP),
 		NewRoute(http.MethodDelete, `/books/(.+)`, _mw.Do(_mw.ValidateId, _mw.Authentication, _mw.LibrarianOnlyAuthorization).Then(book.Delete()).ServeHTTP),

@@ -52,7 +52,54 @@ func (bc BookController) Create() http.HandlerFunc {
 
 func (bc BookController) GetAll() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		res, code, message := bc.usecase.GetAllBooks()
+		mapRecords := map[int]interface{}{9: nil, 15: nil, 30: nil, 60: nil, 90: nil}
+		query := r.URL.Query()
+
+		params := _model.GetAllBooksRequest{}
+		params.Page = 1
+		params.Records = 9
+
+		if value, exist := query["page"]; exist {
+			page, err := strconv.Atoi(value[0])
+
+			if err != nil {
+				log.Println(err)
+				code, message := http.StatusBadRequest, "invalid page"
+				_model.CreateResponse(rw, code, message, nil)
+				return
+			}
+
+			if page < 1 {
+				log.Println("invalid page")
+				code, message := http.StatusBadRequest, "invalid page"
+				_model.CreateResponse(rw, code, message, nil)
+				return
+			}
+
+			params.Page = page
+		}
+
+		if value, exist := query["records"]; exist {
+			records, err := strconv.Atoi(value[0])
+
+			if err != nil {
+				log.Println(err)
+				code, message := http.StatusBadRequest, "invalid number of records"
+				_model.CreateResponse(rw, code, message, nil)
+				return
+			}
+
+			if _, exist := mapRecords[records]; !exist {
+				log.Println("unaccepted number of records")
+				code, message := http.StatusBadRequest, "unaccepted number of records"
+				_model.CreateResponse(rw, code, message, nil)
+				return
+			}
+
+			params.Records = records
+		}
+
+		res, code, message := bc.usecase.GetAllBooks(params)
 
 		if code != http.StatusOK {
 			_model.CreateResponse(rw, code, message, nil)
