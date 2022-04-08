@@ -10,13 +10,16 @@ import (
 	_util "plain-go/public-library/app/util"
 	_bookController "plain-go/public-library/controller/book"
 	_favoriteController "plain-go/public-library/controller/favorite"
+	_requestController "plain-go/public-library/controller/request"
 	_reviewController "plain-go/public-library/controller/review"
 	_userController "plain-go/public-library/controller/user"
 	_wishController "plain-go/public-library/controller/wish"
 	_bookRepository "plain-go/public-library/datastore/book"
+	_requestRepository "plain-go/public-library/datastore/request"
 	_userRepository "plain-go/public-library/datastore/user"
 	_bookUseCase "plain-go/public-library/usecase/book"
 	_favoriteUseCase "plain-go/public-library/usecase/favorite"
+	_requestUseCase "plain-go/public-library/usecase/request"
 	_reviewUseCase "plain-go/public-library/usecase/review"
 	_userUseCase "plain-go/public-library/usecase/user"
 	_wishUseCase "plain-go/public-library/usecase/wish"
@@ -59,6 +62,10 @@ func main() {
 	reviewUseCase := _reviewUseCase.New(bookRepository, userRepository)
 	reviewController := _reviewController.New(reviewUseCase)
 
+	requestRepository := _requestRepository.New(db)
+	requestUseCase := _requestUseCase.New(bookRepository, userRepository, requestRepository)
+	requestController := _requestController.New(requestUseCase)
+
 	// register handlers
 	router := http.HandlerFunc(
 		_router.Router(
@@ -67,6 +74,7 @@ func main() {
 			favoriteController,
 			wishController,
 			reviewController,
+			requestController,
 		),
 	)
 

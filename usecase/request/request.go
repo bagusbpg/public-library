@@ -60,6 +60,7 @@ func (ruc RequestUseCase) GetAllRequests() (res _model.GetAllRequestResponse, co
 		}
 
 		// formatting response
+		request.User.Password = ""
 		request.User.CreatedAt, _ = _helper.TimeFormatter(request.User.CreatedAt)
 		request.User.UpdatedAt, _ = _helper.TimeFormatter(request.User.UpdatedAt)
 		request.BookItem.Book.CreatedAt, _ = _helper.TimeFormatter(request.BookItem.Book.CreatedAt)
@@ -133,7 +134,7 @@ func (ruc RequestUseCase) GetAllRequestsByUserId(userId uint) (res _model.GetAll
 	return
 }
 
-func (ruc RequestUseCase) GetRequestById(requestId uint) (res _model.GetRequestByIdResponse, code int, message string) {
+func (ruc RequestUseCase) GetRequestById(userId uint, requestId uint) (res _model.GetRequestByIdResponse, code int, message string) {
 	// calling repository
 	request, err := ruc.requestRepo.GetRequestById(requestId)
 
@@ -149,8 +150,15 @@ func (ruc RequestUseCase) GetRequestById(requestId uint) (res _model.GetRequestB
 		return
 	}
 
+	// check if requester does not match
+	if request.User.Id != userId {
+		log.Println("forbidden")
+		code, message = http.StatusForbidden, "forbidden"
+		return
+	}
+
 	// get requester
-	request.User, err = ruc.userRepo.GetUserById(request.User.Id)
+	request.User, err = ruc.userRepo.GetUserById(userId)
 
 	if err != nil {
 		code, message = http.StatusInternalServerError, "internal server error"
@@ -166,6 +174,7 @@ func (ruc RequestUseCase) GetRequestById(requestId uint) (res _model.GetRequestB
 	}
 
 	// formatting response
+	request.User.Password = ""
 	request.User.CreatedAt, _ = _helper.TimeFormatter(request.User.CreatedAt)
 	request.User.UpdatedAt, _ = _helper.TimeFormatter(request.User.UpdatedAt)
 	request.BookItem.Book.CreatedAt, _ = _helper.TimeFormatter(request.BookItem.Book.CreatedAt)
@@ -266,6 +275,7 @@ func (ruc RequestUseCase) CreateRequest(userId uint, req _model.CreateRequestReq
 	}
 
 	// formatting response
+	user.Password = ""
 	user.CreatedAt, _ = _helper.TimeFormatter(user.CreatedAt)
 	user.UpdatedAt, _ = _helper.TimeFormatter(user.UpdatedAt)
 	res.Request.User = user
@@ -287,7 +297,7 @@ func (ruc RequestUseCase) CreateRequest(userId uint, req _model.CreateRequestReq
 	return
 }
 
-func (ruc RequestUseCase) UpdateRequest(req _model.UpdateRequestRequest, requestId uint, role string) (res _model.UpdateRequestResponse, code int, message string) {
+func (ruc RequestUseCase) UpdateRequest(userId uint, requestId uint, role string, req _model.UpdateRequestRequest) (res _model.UpdateRequestResponse, code int, message string) {
 	// check request existence
 	request, err := ruc.requestRepo.GetRequestById(requestId)
 
@@ -313,6 +323,13 @@ func (ruc RequestUseCase) UpdateRequest(req _model.UpdateRequestRequest, request
 
 	switch role {
 	case "Member":
+		// check if requester does not match
+		if request.User.Id != userId {
+			log.Println("forbidden")
+			code, message = http.StatusForbidden, "forbidden"
+			return
+		}
+
 		switch req.ActionCode {
 		case 11: // cancel request
 			// check if cancelling request is possible
@@ -376,7 +393,17 @@ func (ruc RequestUseCase) UpdateRequest(req _model.UpdateRequestRequest, request
 			}
 
 			// prepare input to repository
-			request.Status.Id = 10
+			request.Status.Id = 8
+			request.ReturnAt = now
+		case 24: // late return (with penalty)
+			if request.Status.Id != 7 {
+				log.Println("penalty is not payable at this time")
+				code, message = http.StatusBadRequest, "penalty is not payable at this time"
+				return
+			}
+
+			// prepare input to repository
+			request.Status.Id = 9
 			request.ReturnAt = now
 		}
 	default:
@@ -393,8 +420,28 @@ func (ruc RequestUseCase) UpdateRequest(req _model.UpdateRequestRequest, request
 		return
 	}
 
+	// check for late return
+	if res.Request.Status.Id == 5 || res.Request.Status.Id == 6 {
+		borrowDuration := time.Until(res.Request.FinishAt.(time.Time))
+		afterFunctTimer := time.AfterFunc((borrowDuration), func() {
+			futureReq, _ := ruc.requestRepo.GetRequestById(res.Request.Id)
+
+			if futureReq.Status.Id == 5 || futureReq.Status.Id == 6 {
+				futureReq.Status.Id = 7
+				futureReq.UpdatedAt = futureReq.FinishAt.(time.Time)
+				ruc.requestRepo.Update(futureReq)
+			}
+		})
+
+		defer afterFunctTimer.Stop()
+
+		timer := time.NewTimer(borrowDuration)
+		<-timer.C
+	}
+
 	// formatting response
 	res.Request.User, _ = ruc.userRepo.GetUserById(res.Request.User.Id)
+	res.Request.User.Password = ""
 	res.Request.User.CreatedAt, _ = _helper.TimeFormatter(res.Request.User.CreatedAt)
 	res.Request.User.UpdatedAt, _ = _helper.TimeFormatter(res.Request.UpdatedAt)
 	res.Request.BookItem.Book, _ = ruc.bookRepo.GetBookByItemId(uint(res.Request.BookItem.Id))

@@ -11,6 +11,7 @@ import (
 	_mw "plain-go/public-library/app/middleware"
 	_book "plain-go/public-library/controller/book"
 	_favorite "plain-go/public-library/controller/favorite"
+	_request "plain-go/public-library/controller/request"
 	_review "plain-go/public-library/controller/review"
 	_user "plain-go/public-library/controller/user"
 	_wish "plain-go/public-library/controller/wish"
@@ -37,6 +38,7 @@ func Router(
 	favorite *_favorite.FavoriteController,
 	wish *_wish.WishController,
 	review *_review.ReviewController,
+	request *_request.RequestController,
 ) http.HandlerFunc {
 	routes := []route{
 		NewRoute(http.MethodPost, `/login`, _mw.Do(_mw.JSONRequest).Then(user.Login()).ServeHTTP),
@@ -64,11 +66,11 @@ func Router(
 		NewRoute(http.MethodGet, `/reviews/(.+)/(.+)`, _mw.Do(_mw.ValidateId).Then(review.Get()).ServeHTTP),
 		NewRoute(http.MethodPut, `/reviews/(.+)/(.+)`, _mw.Do(_mw.ValidateId, _mw.JSONRequest, _mw.Authentication).Then(review.Update()).ServeHTTP),
 		NewRoute(http.MethodDelete, `/reviews/(.+)/(.+)`, _mw.Do(_mw.ValidateId, _mw.Authentication).Then(review.Delete()).ServeHTTP),
-		// NewRoute(http.MethodGet, "/requests", _mw.Do(_mw.Authentication, _mw.LibraryOnlyAuthorization).Then(request.GetAll()).ServeHTTP),
-		// NewRoute(http.MethodPost, "/requests/(.+)", _mw.Do(_mw.ValidateId, _mw.JSONRequest, _mw.Authentication, _mw.AuthorizedById).Then(request.Create()).ServeHTTP),
-		// NewRoute(http.MethodGet, "/requests/(.+)/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication).Then(request.Get()).ServeHTTP),
-		// NewRoute(http.MethodPut, "/requests/(.+)/(.+)", _mw.Do(_mw.ValidateId, _mw.JSONRequest, _mw.Authentication).Then(request.Update()).ServeHTTP),
-
+		NewRoute(http.MethodGet, "/requests", _mw.Do(_mw.Authentication, _mw.LibrarianOnlyAuthorization).Then(request.GetAll()).ServeHTTP),
+		NewRoute(http.MethodGet, "/requests/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication).Then(request.GetAllByUser()).ServeHTTP),
+		NewRoute(http.MethodPost, "/requests/(.+)", _mw.Do(_mw.ValidateId, _mw.JSONRequest, _mw.Authentication, _mw.AuthorizedById).Then(request.Create()).ServeHTTP),
+		NewRoute(http.MethodGet, "/requests/(.+)/(.+)", _mw.Do(_mw.ValidateId, _mw.Authentication).Then(request.Get()).ServeHTTP),
+		NewRoute(http.MethodPut, "/requests/(.+)/(.+)", _mw.Do(_mw.ValidateId, _mw.JSONRequest, _mw.Authentication).Then(request.Update()).ServeHTTP),
 	}
 
 	return func(rw http.ResponseWriter, r *http.Request) {
