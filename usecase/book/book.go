@@ -3,10 +3,12 @@ package book
 import (
 	"log"
 	"net/http"
+	"net/url"
 	_bookRepository "plain-go/public-library/datastore/book"
 	_entity "plain-go/public-library/entity"
 	_helper "plain-go/public-library/helper"
 	_model "plain-go/public-library/model"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -170,9 +172,88 @@ func (buc BookUseCase) CreateBook(req _model.CreateBookRequest) (res _model.Crea
 	return
 }
 
-func (buc BookUseCase) GetAllBooks(params _model.GetAllBooksRequest) (res _model.GetAllBooksResponse, code int, message string) {
+func (buc BookUseCase) GetAllBooks(query url.Values) (res _model.GetAllBooksResponse, code int, message string) {
+	// default parameters
+	params := _model.GetAllBooksRequest{}
+	params.Page = 1
+	params.Records = 9
+	params.Category = "*"
+	params.Keyword = "*"
+	params.SortBy = "*"
+	params.SortMode = "random"
+
+	if value, exist := query["page"]; exist {
+		page, err := strconv.Atoi(value[0])
+
+		if err != nil {
+			log.Println(err)
+			code, message = http.StatusBadRequest, "invalid page"
+			return
+		}
+
+		if page < 1 {
+			log.Println("invalid page")
+			code, message = http.StatusBadRequest, "invalid page"
+			return
+		}
+
+		params.Page = page
+	}
+
+	mapRecords := map[int]interface{}{9: nil, 15: nil, 30: nil, 60: nil, 90: nil}
+
+	if value, exist := query["records"]; exist {
+		records, err := strconv.Atoi(value[0])
+
+		if err != nil {
+			log.Println(err)
+			code, message = http.StatusBadRequest, "invalid number of records"
+			return
+		}
+
+		if _, exist := mapRecords[records]; !exist {
+			log.Println("unaccepted number of records")
+			code, message = http.StatusBadRequest, "unaccepted number of records"
+			return
+		}
+
+		params.Records = records
+	}
+
+	if value, exist := query["category"]; exist {
+		params.Category = value[0]
+	}
+
+	if value, exist := query["keyword"]; exist {
+		params.Keyword = strings.Join(value, " ")
+	}
+
+	mapSort := map[string]interface{}{"star": nil, "review": nil, "read": nil}
+
+	if value, exist := query["sort"]; exist {
+		if _, exist := mapSort[value[0]]; !exist {
+			log.Println("unaccepted sorting criteria")
+			code, message = http.StatusBadRequest, "unaccepted sorting criteria"
+			return
+		}
+
+		params.SortBy = value[0]
+	}
+
+	mapMode := map[string]interface{}{"asc": nil, "desc": nil}
+
+	if value, exist := query["mode"]; exist {
+		if _, exist := mapMode[value[0]]; !exist {
+			log.Println("unaccepted sorting mode")
+			code, message = http.StatusBadRequest, "unaccepted sorting mode"
+			return
+		}
+
+		params.SortMode = value[0]
+	}
+
 	// calling repository
-	books, err := buc.repository.GetAllBooks()
+	books, err := buc.repository.GetAllBooks(params)
 
 	// detect failure in repository
 	if err != nil {
@@ -470,7 +551,7 @@ func (buc BookUseCase) UpdateBook(req _model.UpdateBookRequest, bookId uint) (re
 
 	// calling repository
 	book.UpdatedAt = time.Now()
-	_book, err := buc.repository.UpdateBook(book)
+	res.Book, err = buc.repository.UpdateBook(book)
 
 	// detect failure in repository
 	if err != nil {
@@ -479,7 +560,6 @@ func (buc BookUseCase) UpdateBook(req _model.UpdateBookRequest, bookId uint) (re
 	}
 
 	// formatting response
-	res.Book = _book
 	res.Book.Id = book.Id
 	res.Book.FavoriteCount, err = buc.repository.CountFavoritesByBookId(bookId)
 

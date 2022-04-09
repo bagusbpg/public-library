@@ -66,8 +66,12 @@ type CreateAuthorRequest struct {
 }
 
 type GetAllBooksRequest struct {
-	Page    int
-	Records int
+	Page     int
+	Records  int
+	Category string
+	Keyword  string
+	SortBy   string
+	SortMode string
 }
 
 type GetAllBooksResponse struct {

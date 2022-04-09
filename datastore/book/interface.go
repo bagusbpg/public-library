@@ -2,6 +2,7 @@ package book
 
 import (
 	_entity "plain-go/public-library/entity"
+	_model "plain-go/public-library/model"
 )
 
 type Book interface {
@@ -12,7 +13,7 @@ type Book interface {
 	CreateNewAuthor(newAuthor _entity.Author) (author _entity.Author, err error)
 	CreateBookAuthorJunction(book _entity.Book, author _entity.Author) (err error)
 	CreateBookItem(book _entity.Book) (err error)
-	GetAllBooks() (books []_entity.Book, err error)
+	GetAllBooks(params _model.GetAllBooksRequest) (books []_entity.Book, err error)
 	GetBookAuthors(bookId uint) (authors []_entity.Author, err error)
 	GetBookById(bookId uint) (book _entity.Book, err error)
 	CountBookById(bookId uint) (count uint, err error)

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	_entity "plain-go/public-library/entity"
+	_model "plain-go/public-library/model"
 )
 
 type BookRepository struct {
@@ -248,13 +249,22 @@ func (br *BookRepository) CreateBookItem(book _entity.Book) (err error) {
 	return
 }
 
-func (br *BookRepository) GetAllBooks() (books []_entity.Book, err error) {
-	// prepare statement
-	stmt, err := br.db.Prepare(`
+func (br *BookRepository) GetAllBooks(params _model.GetAllBooksRequest) (books []_entity.Book, err error) {
+	// basic query
+	query := (`
 		SELECT id, title, publisher, language, pages, category, isbn13, description, created_at, updated_at
 		FROM books
 		WHERE deleted_at IS NULL
 	`)
+
+	// sort by
+	query += ` ORDER BY ?`
+
+	// page and records
+	query += ` LIMIT ? OFFSET ?`
+
+	// prepare statement
+	stmt, err := br.db.Prepare(query)
 
 	if err != nil {
 		log.Println(err)
